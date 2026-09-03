@@ -40,7 +40,7 @@ interface AppContextType {
   loginWithEmail: (email: string, pass: string) => Promise<boolean>;
   registerWithEmail: (name: string, email: string, pass: string) => Promise<boolean>;
   logout: () => void;
-  loginAdmin: (password: string) => boolean;
+  loginAdmin: (password: string) => Promise<{ success: boolean; error?: string }>;
   logoutAdmin: () => void;
   
   // Financial Operations
@@ -82,6 +82,25 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'veyra_notifications',
   AUDIT_LOGS: 'veyra_audit_logs',
   IS_ADMIN: 'veyra_is_admin',
+  ADMIN_TOKEN: 'veyra_admin_token',
+};
+
+const getInitialViewFromUrl = (): 'landing' | 'dashboard' | 'products' | 'calculator' | 'visualizer' | 'howItWorks' | 'about' | 'history' | 'admin' | 'legal' => {
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname.replace(/^\/+/, '').toLowerCase();
+    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+    const target = path || hash;
+    if (target === 'admin') return 'admin';
+    if (target === 'dashboard') return 'dashboard';
+    if (target === 'products') return 'products';
+    if (target === 'calculator') return 'calculator';
+    if (target === 'visualizer') return 'visualizer';
+    if (target === 'howitworks' || target === 'how-it-works') return 'howItWorks';
+    if (target === 'about') return 'about';
+    if (target === 'history') return 'history';
+    if (target === 'legal') return 'legal';
+  }
+  return 'landing';
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -137,7 +156,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return localStorage.getItem(STORAGE_KEYS.IS_ADMIN) === 'true';
   });
 
-  const [activeView, setActiveView] = useState<'landing' | 'dashboard' | 'products' | 'calculator' | 'visualizer' | 'howItWorks' | 'about' | 'history' | 'admin' | 'legal'>('landing');
+  const [activeView, setActiveViewState] = useState<'landing' | 'dashboard' | 'products' | 'calculator' | 'visualizer' | 'howItWorks' | 'about' | 'history' | 'admin' | 'legal'>(getInitialViewFromUrl);
+
+  const setActiveView = (view: 'landing' | 'dashboard' | 'products' | 'calculator' | 'visualizer' | 'howItWorks' | 'about' | 'history' | 'admin' | 'legal') => {
+    setActiveViewState(view);
+    if (typeof window !== 'undefined') {
+      const targetPath = view === 'landing' ? '/' : `/${view}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ view }, '', targetPath);
+      }
+    }
+  };
+
+  // Browser navigation (back / forward buttons) support
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveViewState(getInitialViewFromUrl());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Server-side Admin Session Verification
+  useEffect(() => {
+    const token = sessionStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+    if (isAdmin && token) {
+      fetch('/api/admin/verify', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            // Token rejected by server
+            setIsAdmin(false);
+            localStorage.removeItem(STORAGE_KEYS.IS_ADMIN);
+            sessionStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+          }
+        })
+        .catch(() => {
+          // Keep current state on network disconnect
+        });
+    }
+  }, [isAdmin]);
 
   const [stages, setStages] = useState<VeyraHomeStage[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.STAGES);
@@ -405,18 +464,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveView('landing');
   };
 
-  const loginAdmin = (password: string): boolean => {
-    // Admin password strictly 'uytruytr'
-    if (password.trim() === 'uytruytr') {
-      setIsAdmin(true);
-      setActiveView('admin');
-      return true;
+  const loginAdmin = async (password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      // Call Server-side verification API (Vercel Serverless / dev server)
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password.trim() }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success && data.token) {
+        sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, data.token);
+        localStorage.setItem(STORAGE_KEYS.IS_ADMIN, 'true');
+        setIsAdmin(true);
+        setActiveView('admin');
+        return { success: true };
+      } else {
+        setIsAdmin(false);
+        localStorage.removeItem(STORAGE_KEYS.IS_ADMIN);
+        sessionStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
+        return {
+          success: false,
+          error: data.error || 'Təhlükəsizlik xətası: Parol yalnışdır! Daxil olmaq hüququnuz yoxdur.',
+        };
+      }
+    } catch {
+      // Fallback for static/offline preview without active server:
+      if (password.trim() === 'uytruytr') {
+        localStorage.setItem(STORAGE_KEYS.IS_ADMIN, 'true');
+        setIsAdmin(true);
+        setActiveView('admin');
+        return { success: true };
+      }
+      return { success: false, error: 'Təhlükəsizlik xətası: Parol yalnışdır! Daxil olmaq hüququnuz yoxdur.' };
     }
-    return false;
   };
 
   const logoutAdmin = () => {
     setIsAdmin(false);
+    localStorage.removeItem(STORAGE_KEYS.IS_ADMIN);
+    sessionStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
     setActiveView('landing');
   };
 
