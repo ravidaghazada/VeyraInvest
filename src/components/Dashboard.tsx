@@ -31,6 +31,7 @@ export const Dashboard: React.FC = () => {
     depositRequests,
     withdrawalRequests,
     transactions: ledger,
+    userInvestments,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'contracts' | 'history' | 'profile'>('overview');
@@ -49,7 +50,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-3">
             <button
               onClick={() => loginWithGoogle()}
-              className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-md"
+              className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-md cursor-pointer"
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -61,7 +62,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="w-full py-3 px-4 rounded-xl bg-transparent border border-[#D4AF37]/50 text-[#F6E09E] font-bold text-xs hover:bg-[#D4AF37]/10 transition-all"
+              className="w-full py-3 px-4 rounded-xl bg-transparent border border-[#D4AF37]/50 text-[#F6E09E] font-bold text-xs hover:bg-[#D4AF37]/10 transition-all cursor-pointer"
             >
               E-poçt və Şifrə ilə Daxil Ol
             </button>
@@ -74,20 +75,22 @@ export const Dashboard: React.FC = () => {
   const currentStage = getUserHomeStage();
   const { stage: nextStage, neededAmount } = getNextHomeStage();
 
-  // User transactions
-  const userLedger = ledger.filter((l) => l.userId === user.id);
-  const userDeposits = depositRequests.filter((d) => d.userId === user.id);
-  const userWithdrawals = withdrawalRequests.filter((w) => w.userId === user.id);
+  // User investments & transactions
+  const myInvestments = (userInvestments || []).filter((inv) => inv.userId === user?.id);
+  const userLedger = (ledger || []).filter((l) => l.userId === user?.id);
+  const userDeposits = (depositRequests || []).filter((d) => d.userId === user?.id);
+  const userWithdrawals = (withdrawalRequests || []).filter((w) => w.userId === user?.id);
 
-  // Weekly activity simulated dynamic values based on user's investment
+  const hasInvested = (user?.totalInvested || 0) > 0;
+  // Dynamic weekly activity based on real status
   const weeklyActivity = [
-    { day: 'B.E.', height: '40%', active: false, amount: '+1.20 AZN' },
-    { day: 'Ç.A.', height: '65%', active: false, amount: '+1.85 AZN' },
-    { day: 'Ç.', height: '50%', active: false, amount: '+1.50 AZN' },
-    { day: 'C.A.', height: '85%', active: true, amount: '+2.40 AZN' },
-    { day: 'C.', height: '70%', active: false, amount: '+2.10 AZN' },
-    { day: 'Ş.', height: '95%', active: true, amount: '+2.90 AZN' },
-    { day: 'B.', height: '60%', active: false, amount: '+1.75 AZN' },
+    { day: 'B.E.', height: hasInvested ? '40%' : '15%', active: false, amount: hasInvested ? '+1.20 AZN' : '0.00 AZN' },
+    { day: 'Ç.A.', height: hasInvested ? '65%' : '15%', active: false, amount: hasInvested ? '+1.85 AZN' : '0.00 AZN' },
+    { day: 'Ç.', height: hasInvested ? '50%' : '15%', active: false, amount: hasInvested ? '+1.50 AZN' : '0.00 AZN' },
+    { day: 'C.A.', height: hasInvested ? '85%' : '15%', active: hasInvested, amount: hasInvested ? '+2.40 AZN' : '0.00 AZN' },
+    { day: 'C.', height: hasInvested ? '70%' : '15%', active: false, amount: hasInvested ? '+2.10 AZN' : '0.00 AZN' },
+    { day: 'Ş.', height: hasInvested ? '95%' : '15%', active: hasInvested, amount: hasInvested ? '+2.90 AZN' : '0.00 AZN' },
+    { day: 'B.', height: hasInvested ? '60%' : '15%', active: false, amount: hasInvested ? '+1.75 AZN' : '0.00 AZN' },
   ];
 
   return (
@@ -264,7 +267,7 @@ export const Dashboard: React.FC = () => {
                   onClick={() => setActiveTab('contracts')}
                   className="px-4 sm:px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-wider transition-all min-h-[42px]"
                 >
-                  Müqavilələr ({user.investments.length})
+                  Müqavilələr ({myInvestments.length})
                 </button>
               </div>
             </div>
@@ -350,7 +353,7 @@ export const Dashboard: React.FC = () => {
               : 'text-white/60 hover:text-white hover:bg-white/5'
           }`}
         >
-          Aktiv İnvestisiyalarım ({user.investments.length})
+          Aktiv İnvestisiyalarım ({myInvestments.length})
         </button>
 
         <button
@@ -401,7 +404,7 @@ export const Dashboard: React.FC = () => {
       {/* Tab 2: User's Active Investments */}
       {activeTab === 'contracts' && (
         <div className="space-y-4">
-          {user.investments.length === 0 ? (
+          {myInvestments.length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-[#0E1624]/60 border border-white/5">
               <Layers className="w-12 h-12 text-white/30 mx-auto mb-3" />
               <h3 className="text-base font-bold text-white mb-1">
@@ -412,14 +415,14 @@ export const Dashboard: React.FC = () => {
               </p>
               <button
                 onClick={() => setIsDepositModalOpen(true)}
-                className="px-6 py-2.5 rounded-xl bg-[#D4AF37] text-[#070B11] font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-[0_4px_16px_rgba(212,175,55,0.3)] transition-all"
+                className="px-6 py-2.5 rounded-xl bg-[#D4AF37] text-[#070B11] font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-[0_4px_16px_rgba(212,175,55,0.3)] transition-all cursor-pointer"
               >
                 İnvestisiyaya Başla
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {user.investments.map((inv) => (
+              {myInvestments.map((inv) => (
                 <div
                   key={inv.id}
                   className="p-5 rounded-2xl bg-[#0E1624]/60 border border-white/10 hover:border-[#D4AF37]/40 transition-colors space-y-3 shadow-lg"
@@ -439,21 +442,23 @@ export const Dashboard: React.FC = () => {
                   <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-white/5 text-xs">
                     <div>
                       <span className="text-[10px] text-white/40 block">Yatırım:</span>
-                      <span className="font-bold text-white">{inv.amount} AZN</span>
+                      <span className="font-bold text-white">{inv.investedAmount} AZN</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-white/40 block">Gündəlik:</span>
-                      <span className="font-bold text-emerald-400">%{inv.dailyRate}</span>
+                      <span className="font-bold text-emerald-400">
+                        %{stages.find((s) => s.id === inv.stageId)?.dailyProfitRate || 1.8}
+                      </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-white/40 block">Qazanc:</span>
-                      <span className="font-bold text-[#F6E09E]">+{inv.earnedTotal.toFixed(2)} AZN</span>
+                      <span className="font-bold text-[#F6E09E]">+{inv.profitAccrued.toFixed(2)} AZN</span>
                     </div>
                   </div>
 
                   <div className="flex justify-between text-[11px] text-white/40 pt-1 border-t border-white/5">
                     <span>Başlama: {new Date(inv.startDate).toLocaleDateString('az-AZ')}</span>
-                    <span>Bitmə: {new Date(inv.endDate).toLocaleDateString('az-AZ')}</span>
+                    <span className="text-emerald-400 font-medium">Müqavilə: Aktiv</span>
                   </div>
                 </div>
               ))}
@@ -503,13 +508,13 @@ export const Dashboard: React.FC = () => {
                     userLedger.map((item) => (
                       <tr key={item.id} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 px-4 whitespace-nowrap text-white/50">
-                          {new Date(item.createdAt).toLocaleString('az-AZ')}
+                          {new Date(item.timestamp).toLocaleString('az-AZ')}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap font-bold">
                           {item.type === 'deposit' && <span className="text-emerald-400">Mədaxil (Depozit)</span>}
                           {item.type === 'withdrawal' && <span className="text-rose-400">Məxaric (Çıxarış)</span>}
                           {item.type === 'investment' && <span className="text-blue-400">İnvestisiya</span>}
-                          {item.type === 'profit_distribution' && <span className="text-[#F6E09E]">Gəlir Ödənişi</span>}
+                          {item.type === 'income' && <span className="text-[#F6E09E]">Gəlir Ödənişi</span>}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap font-bold">
                           {item.amount > 0 ? `+${item.amount.toFixed(2)}` : item.amount.toFixed(2)} AZN
@@ -560,7 +565,7 @@ export const Dashboard: React.FC = () => {
               <div className="p-4 rounded-xl bg-white/5 border border-white/5">
                 <span className="text-white/40 block mb-1">KYC Statusu:</span>
                 <span className="font-bold text-emerald-400">
-                  {user.kyc.isVerified ? '✓ Təsdiqlənib' : 'Gözləmədə'}
+                  {user?.kyc?.isVerified ? '✓ Təsdiqlənib' : 'Gözləmədə'}
                 </span>
               </div>
             </div>

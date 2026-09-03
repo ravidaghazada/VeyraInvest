@@ -19,6 +19,7 @@ import { AuthModal } from './components/AuthModal';
 import { DepositModal } from './components/DepositModal';
 import { WithdrawalModal } from './components/WithdrawalModal';
 import { Footer } from './components/Footer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { motion, AnimatePresence } from 'motion/react';
 
 const AppContent: React.FC = () => {
@@ -195,8 +196,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

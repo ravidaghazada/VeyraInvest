@@ -22,12 +22,21 @@ export const WithdrawalModal: React.FC = () => {
   const [cardNumber, setCardNumber] = useState<string>('');
   const [cardHolder, setCardHolder] = useState<string>(user?.name || '');
   const [bankName, setBankName] = useState<string>('Birbank / Kapital Bank');
-  const [finCode, setFinCode] = useState<string>(user?.kyc.finCode || '');
-  const [idSerial, setIdSerial] = useState<string>(user?.kyc.idSerial || '');
+  const [finCode, setFinCode] = useState<string>(user?.kyc?.finCode || '');
+  const [idSerial, setIdSerial] = useState<string>(user?.kyc?.idSerial || '');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Sync user details safely whenever modal opens or user updates
+  React.useEffect(() => {
+    if (user) {
+      if (!cardHolder && user.name) setCardHolder(user.name);
+      if (!finCode && user.kyc?.finCode) setFinCode(user.kyc.finCode);
+      if (!idSerial && user.kyc?.idSerial) setIdSerial(user.kyc.idSerial);
+    }
+  }, [user, isWithdrawalModalOpen]);
 
   if (!isWithdrawalModalOpen || !user) return null;
 

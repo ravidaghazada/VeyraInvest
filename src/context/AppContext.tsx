@@ -355,29 +355,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const name = googleName || (email.toLowerCase().includes('ravid') ? 'Ravid Ağayev' : 'Google İnvestor');
     let targetUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
+    // Calculate real verified balance from approved deposits only
+    const approvedDepositTotal = depositRequests
+      .filter((d) => d.userId === targetUser?.id && d.status === 'completed')
+      .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+
+    const approvedWithdrawalTotal = withdrawalRequests
+      .filter((w) => w.userId === targetUser?.id && w.status === 'completed')
+      .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
+
+    const verifiedBalance = Number(Math.max(0, approvedDepositTotal - approvedWithdrawalTotal).toFixed(2));
+
     if (!targetUser) {
       targetUser = {
         id: 'usr_' + Math.random().toString(36).substring(2, 9),
         name,
         email,
-        balance: 150.00, // Welcome investment balance for verified user
-        totalInvested: 100.00,
-        totalProfit: 14.50,
-        todayChange: 3.20,
+        balance: 0.00, // Strictly 0.00 AZN initial balance
+        totalInvested: 0.00,
+        totalProfit: 0.00,
+        todayChange: 0.00,
         role: 'investor',
         createdAt: new Date().toISOString(),
         isActive: true,
         authProvider: 'google',
         kyc: {
-          isVerified: true,
+          isVerified: false,
           fullName: name,
-          finCode: '7ABC123',
-          idSerial: 'AZE19842100',
+          finCode: '',
+          idSerial: '',
           documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
-          status: 'verified',
+          status: 'unsubmitted',
         },
       };
       setUsers((prev) => [...prev, targetUser!]);
+    } else {
+      // Re-verify existing user: reset any fake balance to real approved deposit total
+      targetUser = {
+        ...targetUser,
+        name: targetUser.name || name,
+        balance: verifiedBalance,
+        totalInvested: approvedDepositTotal > 0 ? (targetUser.totalInvested || 0) : 0.00,
+        totalProfit: approvedDepositTotal > 0 ? (targetUser.totalProfit || 0) : 0.00,
+        todayChange: approvedDepositTotal > 0 ? (targetUser.todayChange || 0) : 0.00,
+        kyc: targetUser.kyc || {
+          isVerified: false,
+          fullName: targetUser.name || name,
+          finCode: '',
+          idSerial: '',
+          documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
+          status: 'unsubmitted',
+        },
+      };
+      setUsers((prev) => prev.map((u) => (u.id === targetUser!.id ? targetUser! : u)));
     }
 
     if (!targetUser.isActive) {
@@ -1000,20 +1030,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Helper: calculate user's current Veyra Home stage based on totalInvested
   const getUserHomeStage = (): VeyraHomeStage => {
-    const total = user ? user.totalInvested : 0;
+    const total = user ? (user.totalInvested || 0) : 0;
+    const activeStages = stages && stages.length > 0 ? stages : INITIAL_STAGES;
     // Find highest reached stage
-    const reached = [...stages]
-      .filter((s) => s.isActive && total >= s.minAmount)
+    const reached = [...activeStages]
+      .filter((s) => s && s.isActive && total >= s.minAmount)
       .sort((a, b) => b.minAmount - a.minAmount);
 
-    return reached.length > 0 ? reached[0] : stages[0];
+    return reached.length > 0 ? reached[0] : (activeStages[0] || INITIAL_STAGES[0]);
   };
 
   // Helper: calculate next home stage and required remaining amount
   const getNextHomeStage = (): { stage: VeyraHomeStage | null; neededAmount: number } => {
-    const total = user ? user.totalInvested : 0;
-    const next = [...stages]
-      .filter((s) => s.isActive && s.minAmount > total)
+    const total = user ? (user.totalInvested || 0) : 0;
+    const activeStages = stages && stages.length > 0 ? stages : INITIAL_STAGES;
+    const next = [...activeStages]
+      .filter((s) => s && s.isActive && s.minAmount > total)
       .sort((a, b) => a.minAmount - b.minAmount);
 
     if (next.length > 0) {

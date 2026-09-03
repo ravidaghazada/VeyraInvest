@@ -258,12 +258,12 @@ export const HeroSection: React.FC = () => {
                       0{idx + 1}
                     </span>
                     <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      {stage.roi}% Gəlir
+                      %{stage.dailyProfitRate} Gündəlik
                     </span>
                   </div>
 
                   <h3 className="text-base font-bold text-white group-hover:text-[#F6E09E] transition-colors mb-1">
-                    {stage.name}
+                    {stage.stageTitle}
                   </h3>
                   <p className="text-xs text-neutral-400 line-clamp-2 mb-4 leading-relaxed">
                     {stage.description}
@@ -272,7 +272,7 @@ export const HeroSection: React.FC = () => {
 
                 <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
                   <span className="text-neutral-400">Min. İnvestisiya:</span>
-                  <span className="font-bold text-[#F6E09E]">{stage.minInvestment} AZN</span>
+                  <span className="font-bold text-[#F6E09E]">{stage.minAmount} AZN</span>
                 </div>
               </div>
             ))}

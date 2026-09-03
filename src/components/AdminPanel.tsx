@@ -178,7 +178,7 @@ export const AdminPanel: React.FC = () => {
 
   // Sales and Financial Statistics
   const totalApprovedDeposits = depositRequests
-    .filter((d) => d.status === 'completed' || d.status === 'approved')
+    .filter((d) => d.status === 'completed')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   const totalPendingDepositAmount = pendingDeposits.reduce((acc, curr) => acc + curr.amount, 0);
@@ -186,7 +186,7 @@ export const AdminPanel: React.FC = () => {
   const totalInvestmentSalesVolume = userInvestments.reduce((acc, curr) => acc + curr.investedAmount, 0);
 
   const totalApprovedWithdrawals = withdrawalRequests
-    .filter((w) => w.status === 'completed' || w.status === 'approved')
+    .filter((w) => w.status === 'completed')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   const totalUserBalances = users.reduce((acc, curr) => acc + (curr.balance || 0), 0);
@@ -476,7 +476,7 @@ export const AdminPanel: React.FC = () => {
                               Gözləyir
                             </span>
                           )}
-                          {(req.status === 'completed' || req.status === 'approved') && (
+                          {req.status === 'completed' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 w-fit">
                               <CheckCircle className="w-3 h-3" />
                               Təsdiqləndi
@@ -593,7 +593,7 @@ export const AdminPanel: React.FC = () => {
                               Gözləyir
                             </span>
                           )}
-                          {(req.status === 'completed' || req.status === 'approved') && (
+                          {req.status === 'completed' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 w-fit">
                               <CheckCircle className="w-3 h-3" />
                               Köçürüldü
