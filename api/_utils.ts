@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'uytruytr';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Ravid2212a';
 const JWT_SECRET = process.env.ADMIN_SECRET || 'veyra-invest-admin-secure-key-2026';
 
 export function getExpectedPassword(): string {
-  return process.env.ADMIN_PASSWORD || 'uytruytr';
+  return process.env.ADMIN_PASSWORD || 'Ravid2212a';
 }
 
 export function createAdminToken(): { token: string; expiresAt: number } {

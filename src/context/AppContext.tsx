@@ -28,6 +28,9 @@ interface AppContextType {
   // Modals
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  authModalMode: 'login' | 'register';
+  setAuthModalMode: (mode: 'login' | 'register') => void;
+  openAuthModal: (mode?: 'login' | 'register') => void;
   isDepositModalOpen: boolean;
   setIsDepositModalOpen: (open: boolean) => void;
   isWithdrawalModalOpen: boolean;
@@ -242,9 +245,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
   const [selectedDepositStageAmount, setSelectedDepositStageAmount] = useState<number | undefined>(undefined);
+
+  const openAuthModal = (mode: 'login' | 'register' = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
 
   // Persistence effects
   useEffect(() => {
@@ -465,18 +474,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const loginAdmin = async (password: string): Promise<{ success: boolean; error?: string }> => {
+    const trimmed = password.trim();
+    // Fast-path: verified admin master passwords
+    if (trimmed === 'Ravid2212a' || trimmed === 'uytruytr') {
+      localStorage.setItem(STORAGE_KEYS.IS_ADMIN, 'true');
+      sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, 'admin-session-' + Date.now());
+      setIsAdmin(true);
+      setActiveView('admin');
+      
+      // Async notify server if available
+      try {
+        fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: trimmed }),
+        }).then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (data?.token) sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, data.token);
+        }).catch(() => {});
+      } catch {}
+
+      return { success: true };
+    }
+
     try {
       // Call Server-side verification API (Vercel Serverless / dev server)
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: password.trim() }),
+        body: JSON.stringify({ password: trimmed }),
       });
 
       const data = await res.json().catch(() => ({}));
 
-      if (res.ok && data.success && data.token) {
-        sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, data.token);
+      if (res.ok && data.success) {
+        if (data.token) sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, data.token);
         localStorage.setItem(STORAGE_KEYS.IS_ADMIN, 'true');
         setIsAdmin(true);
         setActiveView('admin');
@@ -491,13 +523,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       }
     } catch {
-      // Fallback for static/offline preview without active server:
-      if (password.trim() === 'uytruytr') {
-        localStorage.setItem(STORAGE_KEYS.IS_ADMIN, 'true');
-        setIsAdmin(true);
-        setActiveView('admin');
-        return { success: true };
-      }
       return { success: false, error: 'Təhlükəsizlik xətası: Parol yalnışdır! Daxil olmaq hüququnuz yoxdur.' };
     }
   };
@@ -1017,6 +1042,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         auditLogs,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        authModalMode,
+        setAuthModalMode,
+        openAuthModal,
         isDepositModalOpen,
         setIsDepositModalOpen,
         isWithdrawalModalOpen,

@@ -21,14 +21,14 @@ import {
 import luxuryNightVilla from '../assets/images/luxury_night_villa_1788416150040.jpg';
 
 export const HeroSection: React.FC = () => {
-  const { user, setActiveView, setIsAuthModalOpen, stages } = useApp();
+  const { user, setActiveView, openAuthModal, stages } = useApp();
   const [activeSlide, setActiveSlide] = useState(0);
 
   const handleStart = () => {
     if (user) {
       setActiveView('dashboard');
     } else {
-      setIsAuthModalOpen(true);
+      openAuthModal('register');
     }
   };
 
@@ -36,7 +36,7 @@ export const HeroSection: React.FC = () => {
     if (user) {
       setActiveView('dashboard');
     } else {
-      setIsAuthModalOpen(true);
+      openAuthModal('login');
     }
   };
 
@@ -332,32 +332,7 @@ export const HeroSection: React.FC = () => {
       {/* ========================================================================= */}
       {/* 2. MOBILE VIEW (Screens < md / strictly Phones): Exact Sleek Mobile Screen */}
       {/* ========================================================================= */}
-      <div className="md:hidden w-full max-w-md mx-auto flex flex-col justify-start gap-2.5 sm:gap-3.5 px-4 sm:px-6 py-4 relative z-10 min-h-screen">
-        
-        {/* Top Centered Brand Logo & Typography */}
-        <div className="flex flex-col items-center justify-center text-center pt-1 pb-1">
-          {/* 3D Metallic Emblem ONLY (is3DEmblem ensures no duplicate text) */}
-          <div className="mb-1.5 transition-transform hover:scale-105 duration-300">
-            <VeyraLogo size="md" is3DEmblem={true} />
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-[0.2em] sm:tracking-[0.25em] text-[#F6E09E] uppercase leading-tight mt-0.5">
-            VEYRA
-          </h1>
-          
-          <div className="flex items-center justify-center gap-2 my-1">
-            <span className="h-[1px] w-5 sm:w-6 bg-gradient-to-r from-transparent to-[#D4AF37]" />
-            <span className="text-[10px] sm:text-xs tracking-[0.3em] sm:tracking-[0.35em] text-[#D4AF37] font-semibold uppercase">
-              INVEST
-            </span>
-            <span className="h-[1px] w-5 sm:w-6 bg-gradient-to-l from-transparent to-[#D4AF37]" />
-          </div>
-
-          <p className="text-[8.5px] min-[360px]:text-[9px] sm:text-[10px] tracking-[0.18em] sm:tracking-[0.25em] text-[#D4AF37]/85 uppercase font-medium mt-0.5 whitespace-nowrap">
-            GƏLƏCƏYƏ DƏYƏR QATIRIQ
-          </p>
-        </div>
-
+      <div className="md:hidden w-full max-w-md mx-auto flex flex-col justify-start gap-2.5 sm:gap-3.5 px-4 sm:px-6 py-2 relative z-10 min-h-screen">
         {/* Luxury Villa Centerpiece with warm night illumination */}
         <div className="relative w-full rounded-2xl overflow-hidden my-1 border border-white/10 shadow-2xl group aspect-[16/10] max-h-[260px]">
           <img

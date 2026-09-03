@@ -32,7 +32,7 @@ const AppContent: React.FC = () => {
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D4AF37]/[0.03] rounded-full blur-[160px] pointer-events-none z-0" />
 
       {/* Global Responsive Navigation Bar */}
-      <div className="relative z-30">
+      <div className="relative z-40">
         <Navbar />
       </div>
 
