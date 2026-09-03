@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Cinzel', serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --color-gold-200: #FBF0D2;
+  --color-gold-300: #F6E09E;
+  --color-gold-400: #E6C875;
+  --color-gold-500: #D4AF37;
+  --color-gold-600: #B88E1D;
+  --color-gold-700: #8C670D;
+  --color-dark-950: #04070B;
+  --color-dark-900: #070B11;
+  --color-dark-850: #0A101A;
+  --color-dark-800: #0E1624;
+  --color-dark-700: #152238;
+  --color-dark-600: #1E2F4D;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #070B11;
+    color: #F3F4F6;
+    max-width: 100%;
+    overflow-x: hidden;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  /* Prevent text overflow across all screens */
+  p, h1, h2, h3, h4, h5, h6, span, a, button {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+}
+
+/* Custom luxury gold gradients and glassmorphism */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF6D6 0%, #D4AF37 50%, #AA7C11 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-gradient-bg {
+  background: linear-gradient(135deg, #F6E09E 0%, #D4AF37 50%, #B88E1D 100%);
+}
+
+.gold-gradient-border {
+  border-image: linear-gradient(135deg, rgba(212, 175, 55, 0.7), rgba(212, 175, 55, 0.15)) 1;
+}
+
+.glass-card {
+  background: rgba(14, 22, 36, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+}
+
+.glass-card-hover:hover {
+  background: rgba(20, 34, 56, 0.85);
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 10px 30px -10px rgba(212, 175, 55, 0.15);
+}
+
+.glass-dropdown {
+  background: rgba(10, 16, 26, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+
+/* Responsive clamp typography helpers */
+.heading-hero {
+  font-size: clamp(1.75rem, 4vw + 1rem, 3.75rem);
+  line-height: 1.15;
+}
+
+.heading-section {
+  font-size: clamp(1.5rem, 2.5vw + 0.75rem, 2.75rem);
+  line-height: 1.2;
+}
+
+/* Custom gold scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070B11;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.6);
+}
+
+
