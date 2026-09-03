@@ -19,6 +19,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import luxuryNightVilla from '../assets/images/luxury_night_villa_1788416150040.jpg';
+import { ACTIVE_APK_DOWNLOAD_URL, APK_CONFIG } from '../constants/appConfig';
 
 export const HeroSection: React.FC = () => {
   const { user, setActiveView, openAuthModal, stages } = useApp();
@@ -136,7 +137,7 @@ export const HeroSection: React.FC = () => {
                 <button
                   onClick={handleStart}
                   id="desktop-hero-start-btn"
-                  className="py-3.5 sm:py-4 px-7 sm:px-8 rounded-2xl bg-gradient-to-r from-[#F6E09E] via-[#D4AF37] to-[#C99E2A] text-[#070B11] font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-[0_8px_30px_rgba(212,175,55,0.4)] hover:brightness-105 active:scale-[0.98] transition-all"
+                  className="py-3.5 sm:py-4 px-7 sm:px-8 rounded-2xl bg-gradient-to-r from-[#F6E09E] via-[#D4AF37] to-[#C99E2A] text-[#070B11] font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-[0_8px_30px_rgba(212,175,55,0.4)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <span>İnvestisiyaya Başla</span>
                   <ArrowRight className="w-5 h-5 stroke-[2.5]" />
@@ -145,18 +146,35 @@ export const HeroSection: React.FC = () => {
                 <button
                   onClick={handleLogin}
                   id="desktop-hero-login-btn"
-                  className="py-3.5 sm:py-4 px-6 sm:px-7 rounded-2xl bg-[#0B111B]/80 hover:bg-[#121B2B] text-[#F6E09E] font-bold text-sm sm:text-base border border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all active:scale-[0.98]"
+                  className="py-3.5 sm:py-4 px-6 sm:px-7 rounded-2xl bg-[#0B111B]/80 hover:bg-[#121B2B] text-[#F6E09E] font-bold text-sm sm:text-base border border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all active:scale-[0.98] cursor-pointer"
                 >
                   Daxil Ol
                 </button>
 
                 <button
                   onClick={() => setActiveView('calculator')}
-                  className="py-3.5 sm:py-4 px-5 rounded-2xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors border border-white/10"
+                  className="py-3.5 sm:py-4 px-5 rounded-2xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors border border-white/10 cursor-pointer"
                 >
                   <Calculator className="w-4 h-4 text-[#D4AF37]" />
                   <span>Qazancı Hesabla</span>
                 </button>
+
+                <a
+                  href={ACTIVE_APK_DOWNLOAD_URL} 
+                  download={APK_CONFIG.fileName}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#F6E09E] to-[#AA771C] text-black font-extrabold text-base shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-transform duration-300 cursor-pointer"
+                >
+                  {/* Android İkonu */}
+                  <svg className="w-6 h-6 fill-current flex-shrink-0" viewBox="0 0 24 24">
+                    <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4234 13.8554 8.134 12 8.134c-1.8554 0-3.5802.2894-5.1828.8157L4.7949 5.4467a.4161.4161 0 00-.5676-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+                  </svg>
+                  <div className="flex flex-col text-left leading-tight">
+                    <span>Android Tətbiqini Yüklə (.APK)</span>
+                    <span className="text-[10px] font-semibold text-black/70">v1.0.0 • Rəsmi GitHub Buraxılışı</span>
+                  </div>
+                </a>
               </div>
 
               {/* Key Trust Highlights */}
@@ -417,17 +435,35 @@ export const HeroSection: React.FC = () => {
           <button
             onClick={handleStart}
             id="mobile-hero-start-btn"
-            className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-[#F6E09E] via-[#D4AF37] to-[#C99E2A] text-[#070B11] font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-[0_6px_25px_rgba(212,175,55,0.4)] hover:brightness-105 active:scale-[0.98] transition-all min-h-[48px]"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-[#F6E09E] via-[#D4AF37] to-[#C99E2A] text-[#070B11] font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-[0_6px_25px_rgba(212,175,55,0.4)] hover:brightness-105 active:scale-[0.98] transition-all min-h-[48px] cursor-pointer"
           >
             <span>Başla</span>
             <ArrowRight className="w-5 h-5 stroke-[2.5]" />
           </button>
 
+          {/* Android APK Download Button */}
+          <a
+            href={ACTIVE_APK_DOWNLOAD_URL} 
+            download={APK_CONFIG.fileName}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#F6E09E] to-[#AA771C] text-black font-extrabold text-sm sm:text-base shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-105 transition-transform duration-300 flex items-center justify-center gap-3 min-h-[48px] cursor-pointer"
+          >
+            {/* Android İkonu */}
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current flex-shrink-0" viewBox="0 0 24 24">
+              <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5802 8.4234 13.8554 8.134 12 8.134c-1.8554 0-3.5802.2894-5.1828.8157L4.7949 5.4467a.4161.4161 0 00-.5676-.1521.4157.4157 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/>
+            </svg>
+            <div className="flex flex-col text-left leading-tight">
+              <span>Android Tətbiqini Yüklə (.APK)</span>
+              <span className="text-[10px] font-semibold text-black/70">v1.0.0 • Rəsmi GitHub Buraxılışı</span>
+            </div>
+          </a>
+
           {/* Secondary Dark Translucent Button */}
           <button
             onClick={handleLogin}
             id="mobile-hero-login-btn"
-            className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-[#0B111B]/80 hover:bg-[#121B2B] text-[#F6E09E] font-bold text-sm sm:text-base border border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all active:scale-[0.98] min-h-[48px]"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-[#0B111B]/80 hover:bg-[#121B2B] text-[#F6E09E] font-bold text-sm sm:text-base border border-[#D4AF37]/40 hover:border-[#D4AF37] transition-all active:scale-[0.98] min-h-[48px] cursor-pointer"
           >
             Daxil ol
           </button>
