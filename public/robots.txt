@@ -1,0 +1,30 @@
+# Robots.txt for Veyra Invest (https://veyrainvest.az)
+# Allows Googlebot and all legitimate search engines to crawl public pages
+
+User-agent: *
+Allow: /
+Allow: /products
+Allow: /calculator
+Allow: /visualizer
+Allow: /howitworks
+Allow: /how-it-works
+Allow: /about
+Allow: /legal
+
+# Disallow private user/admin areas and sensitive endpoints
+Disallow: /admin
+Disallow: /api/admin/
+
+# Allow static resources required to render the website
+Allow: /assets/
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.svg$
+Allow: /*.webp$
+Allow: /*.apk$
+
+# XML Sitemap location
+Sitemap: https://veyrainvest.az/sitemap.xml

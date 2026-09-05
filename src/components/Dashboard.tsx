@@ -16,6 +16,7 @@ import {
   Sparkles,
   Layers,
   Lock,
+  RefreshCw,
 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -25,7 +26,8 @@ export const Dashboard: React.FC = () => {
     getNextHomeStage,
     setIsDepositModalOpen,
     setIsWithdrawalModalOpen,
-    loginWithGoogle,
+    openAuthModal,
+    reconcileBalance,
     setIsAuthModalOpen,
     stages,
     depositRequests,
@@ -49,7 +51,7 @@ export const Dashboard: React.FC = () => {
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => loginWithGoogle()}
+              onClick={() => openAuthModal('login')}
               className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-md cursor-pointer"
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
@@ -141,9 +143,19 @@ export const Dashboard: React.FC = () => {
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/5 rounded-full -mr-16 -mt-16 blur-2xl" />
             
             <div>
-              <p className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-2">
-                Ümumi Balans
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[#D4AF37] text-xs font-bold uppercase tracking-widest">
+                  Ümumi Balans
+                </p>
+                <button
+                  onClick={reconcileBalance}
+                  title="Balansı təsdiqlənmiş əməliyyatlarla sinxronlaşdır"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-[11px] font-medium flex items-center gap-1.5 transition-all border border-white/10 cursor-pointer"
+                >
+                  <RefreshCw className="w-3 h-3 text-[#F6E09E]" />
+                  <span>Sinxronlaşdır</span>
+                </button>
+              </div>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tighter text-white">
                 {user.balance.toFixed(2)}{' '}
                 <span className="text-base sm:text-lg font-light opacity-60 text-[#F6E09E]">AZN</span>
@@ -320,10 +332,10 @@ export const Dashboard: React.FC = () => {
                   <h4 className="font-bold text-xs truncate">{stage.name}</h4>
                   <p
                     className={`text-[10px] ${
-                      isCurrent ? 'text-[#070B11]/80 font-semibold' : 'text-white/40'
+                      isCurrent ? 'text-[#070B11]/80 font-semibold' : 'text-[#F6E09E]/80'
                     }`}
                   >
-                    {stage.minAmount} AZN • %{stage.dailyProfitRate}/gün
+                    {stage.minAmount} AZN • +{(stage.dailyIncome ?? (stage.minAmount * 0.06)).toFixed(2)} ₼/gün
                   </p>
                 </div>
               );

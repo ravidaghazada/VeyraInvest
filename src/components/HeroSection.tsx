@@ -195,14 +195,16 @@ export const HeroSection: React.FC = () => {
 
             </div>
 
-            {/* Right Column: Luxury Villa Architectural Feature Card with Floating Tags */}
-            <div className="col-span-12 lg:col-span-5 relative">
-              <div className="relative rounded-3xl overflow-hidden border border-[#D4AF37]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8)] group bg-[#0E1624]">
+            {/* Right Column: Luxury Villa Showcase */}
+            <div className="col-span-12 lg:col-span-5 relative flex flex-col items-center">
+              <div className="relative w-full rounded-3xl overflow-hidden border border-[#D4AF37]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8)] group bg-[#0E1624]">
                 {/* Image with subtle hover zoom */}
                 <div className="relative w-full h-[380px] lg:h-[460px] xl:h-[490px] overflow-hidden">
                   <img
                     src={luxuryNightVilla}
-                    alt="Veyra Invest Luxury Villa"
+                    alt="Veyra Invest — Lüks Villa Tikintisi və Daşınmaz Əmlak İnvestisiya Mərhələləri"
+                    loading="eager"
+                    decoding="async"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
                   />
@@ -276,7 +278,7 @@ export const HeroSection: React.FC = () => {
                       0{idx + 1}
                     </span>
                     <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      %{stage.dailyProfitRate} Gündəlik
+                      +{(stage.dailyIncome ?? (stage.minAmount * 0.06)).toFixed(2)} AZN/gün
                     </span>
                   </div>
 
@@ -355,7 +357,9 @@ export const HeroSection: React.FC = () => {
         <div className="relative w-full rounded-2xl overflow-hidden my-1 border border-white/10 shadow-2xl group aspect-[16/10] max-h-[260px]">
           <img
             src={luxuryNightVilla}
-            alt="Veyra Invest Villa"
+            alt="Veyra Invest — Lüks Villa Tikintisi və Daşınmaz Əmlak İnvestisiyaları"
+            loading="eager"
+            decoding="async"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
           />
@@ -421,9 +425,9 @@ export const HeroSection: React.FC = () => {
 
         {/* Headlines */}
         <div className="text-center my-1 px-1">
-          <h2 className="text-lg min-[360px]:text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-snug">
+          <h1 className="text-lg min-[360px]:text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-snug">
             <span className="text-[#F6E09E]">Veyra Home</span> ilə investisiya edin.
-          </h2>
+          </h1>
           <p className="text-xs sm:text-sm text-neutral-300 font-normal leading-relaxed mt-1 max-w-xs mx-auto">
             Kiçik addımlarla başlayın, böyük gələcəyə sahib olun.
           </p>

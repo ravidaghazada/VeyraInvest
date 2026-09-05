@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Ana Səhifə (Homepage) -->
+  <url>
+    <loc>https://veyrainvest.az/</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- İnvestisiya Məhsulları və Tikinti Mərhələləri (Products & Stages) -->
+  <url>
+    <loc>https://veyrainvest.az/products</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Gəlir və Faiz Kalkulyatoru (Profit Calculator) -->
+  <url>
+    <loc>https://veyrainvest.az/calculator</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- 3D Veyra Home İnteraktiv Vizualizator (3D Architectural Visualizer) -->
+  <url>
+    <loc>https://veyrainvest.az/visualizer</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Necə İşləyir? (How It Works) -->
+  <url>
+    <loc>https://veyrainvest.az/howitworks</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Şirkət Haqqında Rəsmi Məlumat (About Us) -->
+  <url>
+    <loc>https://veyrainvest.az/about</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Hüquqi Şəffaflıq, Lisenziya və Qaydalar (Legal & Compliance) -->
+  <url>
+    <loc>https://veyrainvest.az/legal</loc>
+    <lastmod>2026-09-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

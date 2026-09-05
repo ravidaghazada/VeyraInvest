@@ -38,9 +38,9 @@ export const HowItWorksSection: React.FC = () => {
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#D4AF37]/15 text-[#F6E09E] border border-[#D4AF37]/30 mb-3">
           Sadə və Şəffaf Mexanizm
         </div>
-        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white">
           Necə <span className="gold-gradient-text font-serif">İşləyir?</span>
-        </h2>
+        </h1>
         <p className="text-xs sm:text-base text-neutral-400 mt-2.5 sm:mt-3 max-w-xl mx-auto">
           4 sadə addımla maliyyə gələcəyinizi qurun və qazanmağa başlayın.
         </p>

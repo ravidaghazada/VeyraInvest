@@ -1,0 +1,199 @@
+{
+  "users": [
+    {
+      "id": "usr_default_investor",
+      "name": "Ravid Ağayev",
+      "email": "ravidagayev3169@gmail.com",
+      "balance": 0,
+      "totalInvested": 0,
+      "totalProfit": 0,
+      "role": "investor",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "isActive": true,
+      "kycStatus": "verified"
+    },
+    {
+      "id": "usr_g_1006310003",
+      "name": "Ravid Kali",
+      "email": "ravidkali10@gmail.com",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocKnzFMqk-d-QD7cfjJbKDpN847f8Sih4VYacesxh1sWWWwivQ=s96-c",
+      "balance": 0,
+      "totalInvested": 0,
+      "totalProfit": 0,
+      "role": "investor",
+      "createdAt": "2026-09-05T09:10:43.724Z",
+      "isActive": true,
+      "kycStatus": "unverified",
+      "authProvider": "google",
+      "googleId": "100631000351685005166"
+    }
+  ],
+  "deposits": [],
+  "deposit_receipts": [],
+  "deposit_plans": [
+    {
+      "id": "plan_25",
+      "name": "Veyra Start",
+      "minAmount": 25,
+      "maxAmount": 49,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 1.5,
+      "monthlyIncome": 45,
+      "terms": "Gündəlik gəlir: 1.50 AZN • Aylıq gəlir: 45 AZN",
+      "riskLevel": "Çox Aşağı",
+      "isActive": true,
+      "order": 1
+    },
+    {
+      "id": "plan_50",
+      "name": "Veyra Build",
+      "minAmount": 50,
+      "maxAmount": 99,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 3.0,
+      "monthlyIncome": 90,
+      "terms": "Gündəlik gəlir: 3.00 AZN • Aylıq gəlir: 90 AZN",
+      "riskLevel": "Çox Aşağı",
+      "isActive": true,
+      "order": 2
+    },
+    {
+      "id": "plan_100",
+      "name": "Veyra Growth",
+      "minAmount": 100,
+      "maxAmount": 249,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 6.0,
+      "monthlyIncome": 180,
+      "terms": "Gündəlik gəlir: 6.00 AZN • Aylıq gəlir: 180 AZN",
+      "riskLevel": "Aşağı",
+      "isActive": true,
+      "order": 3
+    },
+    {
+      "id": "plan_250",
+      "name": "Veyra Residence",
+      "minAmount": 250,
+      "maxAmount": 499,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 15.0,
+      "monthlyIncome": 450,
+      "terms": "Gündəlik gəlir: 15.00 AZN • Aylıq gəlir: 450 AZN",
+      "riskLevel": "Aşağı",
+      "isActive": true,
+      "order": 4
+    },
+    {
+      "id": "plan_500",
+      "name": "Veyra Premium",
+      "minAmount": 500,
+      "maxAmount": 749,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 30.0,
+      "monthlyIncome": 900,
+      "terms": "Gündəlik gəlir: 30.00 AZN • Aylıq gəlir: 900 AZN",
+      "riskLevel": "Aşağı",
+      "isActive": true,
+      "order": 5
+    },
+    {
+      "id": "plan_750",
+      "name": "Veyra Prestij",
+      "minAmount": 750,
+      "maxAmount": 999,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 45.0,
+      "monthlyIncome": 1350,
+      "terms": "Gündəlik gəlir: 45.00 AZN • Aylıq gəlir: 1350 AZN",
+      "riskLevel": "Orta",
+      "isActive": true,
+      "order": 6
+    },
+    {
+      "id": "plan_1000",
+      "name": "Veyra Luxury",
+      "minAmount": 1000,
+      "maxAmount": 1199,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 60.0,
+      "monthlyIncome": 1800,
+      "terms": "Gündəlik gəlir: 60.00 AZN • Aylıq gəlir: 1800 AZN",
+      "riskLevel": "Düşünülmüş",
+      "isActive": true,
+      "order": 7
+    },
+    {
+      "id": "plan_1200",
+      "name": "Veyra Elite",
+      "minAmount": 1200,
+      "maxAmount": 50000,
+      "durationDays": 30,
+      "profitRate": 6.0,
+      "dailyIncome": 72.0,
+      "monthlyIncome": 2160,
+      "terms": "Gündəlik gəlir: 72.00 AZN • Aylıq gəlir: 2160 AZN",
+      "riskLevel": "Düşünülmüş",
+      "isActive": true,
+      "order": 8
+    }
+  ],
+  "balance_transactions": [],
+  "admin_audit_logs": [
+    {
+      "id": "aud_1788603715328_49wys",
+      "timestamp": "2026-09-05T10:21:55.328Z",
+      "adminId": "adm_01",
+      "adminEmail": "admin@veyrainvest.az",
+      "action": "ADMIN_VIEWED_RECEIPT",
+      "details": "Admin panelinə uğurla giriş edildi.",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "aud_1788599823344_j9ofj",
+      "timestamp": "2026-09-05T09:17:03.344Z",
+      "adminId": "adm_01",
+      "adminEmail": "admin@veyrainvest.az",
+      "action": "ADMIN_VIEWED_RECEIPT",
+      "details": "Admin panelinə uğurla giriş edildi.",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "aud_1788599620417_acg7e",
+      "timestamp": "2026-09-05T09:13:40.417Z",
+      "adminId": "adm_01",
+      "adminEmail": "admin@veyrainvest.az",
+      "action": "ADMIN_VIEWED_RECEIPT",
+      "details": "Admin panelinə uğurla giriş edildi.",
+      "ip": "127.0.0.1"
+    }
+  ],
+  "payment_settings": {
+    "id": "pay_settings_main",
+    "bankName": "Kapital Bank / Birbank",
+    "accountHolder": "Veyra İnvest",
+    "cardNumber": "4169 7388 4952 8363",
+    "maskedCard": "4169 7388 4952 8363",
+    "iban": "AZ21NABZ01350100000000012345",
+    "paymentMethod": "Birbank / Kapital Bank",
+    "instructions": "Ödənişi göstərilən hesaba/karta köçürün. Ödəniş etdikdən sonra qəbzi yükləyin.",
+    "isActive": true,
+    "updatedAt": "2026-09-05T10:19:00.000Z",
+    "updatedBy": "Sistem"
+  },
+  "admin_users": [
+    {
+      "id": "adm_01",
+      "username": "admin",
+      "role": "super_admin",
+      "name": "Veyra Mərkəzi Baş İnzibatçı",
+      "email": "admin@veyrainvest.az"
+    }
+  ]
+}

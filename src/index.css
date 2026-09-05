@@ -115,4 +115,51 @@ html {
   background: rgba(212, 175, 55, 0.6);
 }
 
+/* 3D Bank Card Hero Seamless Floating Animation */
+@keyframes cardHeroFloat {
+  0% {
+    transform: rotateY(-13deg) rotateX(6.5deg) rotateZ(-1.8deg) translateY(-9px);
+  }
+  25% {
+    transform: rotateY(-4deg) rotateX(1deg) rotateZ(-0.5deg) translateY(0px);
+  }
+  50% {
+    transform: rotateY(13deg) rotateX(-5.5deg) rotateZ(1.8deg) translateY(9px);
+  }
+  75% {
+    transform: rotateY(3deg) rotateX(1deg) rotateZ(0.5deg) translateY(1px);
+  }
+  100% {
+    transform: rotateY(-13deg) rotateX(6.5deg) rotateZ(-1.8deg) translateY(-9px);
+  }
+}
+
+/* Red Laser Pulse Sweep Animation */
+@keyframes laserTravelingGlow {
+  0% {
+    stroke-dashoffset: 600;
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -600;
+    opacity: 0.2;
+  }
+}
+
+/* Card Staggered Entrance Animation */
+@keyframes cardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
 

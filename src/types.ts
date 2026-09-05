@@ -21,23 +21,73 @@ export interface LedgerEntry {
   balanceAfter: number;
 }
 
+export interface PaymentSettings {
+  bankName: string;
+  accountHolder: string;
+  cardNumber?: string;
+  maskedCard: string;
+  iban: string;
+  paymentMethod: string;
+  instructions: string;
+  isActive: boolean;
+  updatedAt?: string;
+}
+
+export interface DepositPlan {
+  id: string;
+  name: string;
+  minAmount: number;
+  maxAmount: number;
+  durationDays: number;
+  profitRate: number;
+  dailyIncome?: number;
+  monthlyIncome?: number;
+  terms: string;
+  riskLevel: 'Çox Aşağı' | 'Aşağı' | 'Orta' | 'Düşünülmüş';
+  isActive: boolean;
+  order: number;
+}
+
+export interface DepositStats {
+  totalDeposits: number;
+  pendingDeposits: number;
+  approvedDeposits: number;
+  rejectedDeposits: number;
+  totalDepositedAmount: number;
+  totalApprovedAmount: number;
+  totalPendingAmount: number;
+  totalRejectedAmount: number;
+  todayDeposits: number;
+  todayDepositedAmount: number;
+}
+
 export interface DepositRequest {
   id: string;
   userId: string;
   userEmail: string;
   userName: string;
+  userPhone?: string;
   amount: number;
   currency: 'AZN';
-  status: 'pending' | 'processing' | 'completed' | 'rejected';
+  status: 'pending' | 'processing' | 'completed' | 'approved' | 'rejected' | 'cancelled';
   createdAt: string;
-  paymentMethod: 'Birbank / Kapital Bank' | 'M10' | 'Bank Kartı';
-  bankAccount: string;
+  updatedAt?: string;
+  paymentMethod: string;
+  paymentDestinationUsed?: string;
+  bankAccount?: string;
   referenceCode: string;
   receiptUrl?: string; // base64 or file URL
+  receiptId?: string;
   receiptFileName?: string;
+  receiptPreview?: string;
   rejectionReason?: string;
+  verificationNote?: string;
+  verificationStatus?: 'pending_review' | 'verified_approved' | 'rejected_invalid';
   approvedAt?: string;
   approvedBy?: string;
+  planId?: string;
+  planName?: string;
+  transactionReferenceId?: string;
 }
 
 export interface WithdrawalRequest {
@@ -69,12 +119,15 @@ export interface VeyraHomeStage {
   features: string[];
   badge: string;
   riskLevel: 'Çox Aşağı' | 'Aşağı' | 'Orta' | 'Düşünülmüş';
-  dailyProfitRate: number; // e.g. 0.45% - 0.95%
+  dailyProfitRate: number; // e.g. 6.0%
+  dailyIncome: number; // e.g. 1.50 AZN
+  monthlyIncome: number; // e.g. 45 AZN
   durationDays: number;
   commission: string;
   withdrawalCondition: string;
   isActive: boolean;
   visualStage: string;
+  imageUrl?: string;
 }
 
 export interface UserInvestment {
@@ -116,6 +169,8 @@ export interface User {
   email: string;
   name: string;
   avatarUrl?: string;
+  googleId?: string;
+  kycStatus?: 'unsubmitted' | 'pending' | 'verified' | 'rejected';
   balance: number; // Available liquid balance
   totalInvested: number;
   totalProfit: number;

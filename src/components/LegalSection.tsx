@@ -9,9 +9,9 @@ export const LegalSection: React.FC = () => {
           <Scale className="w-3.5 h-3.5 text-[#D4AF37]" />
           Hüquqi Şəffaflıq & Təhlükəsizlik
         </div>
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
-          Lisenziya və <span className="gold-gradient-text font-serif">Maliyyə Zəmanəti</span>
-        </h2>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+          Lisenziya, Hüquqi Şəffaflıq və <span className="gold-gradient-text font-serif">Maliyyə Qaydaları</span>
+        </h1>
         <p className="text-xs sm:text-sm text-neutral-400 mt-2">
           Hər bir maliyyə əməliyyatı Azərbaycan Respublikasının qüvvədə olan Mülki Məcəlləsinə uyğundur.
         </p>

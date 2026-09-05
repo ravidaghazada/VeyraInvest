@@ -12,9 +12,9 @@ export const AboutSection: React.FC = () => {
             Şirkət Haqqında Rəsmi Məlumat
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
-            Veyra Invest — <span className="gold-gradient-text font-serif">Gələcəyə Dəyər Qatırıq</span>
-          </h2>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+            Veyra Invest — <span className="gold-gradient-text font-serif">Haqqımızda və Korporativ Fəaliyyət</span>
+          </h1>
 
           <p className="text-sm sm:text-base text-neutral-300 leading-relaxed">
             «Veyra Invest» Azərbaycan Respublikasının qanunvericiliyinə tam uyğun olaraq fəaliyyət göstərən, premium daşınmaz əmlak, kommersiya infrastrukturu və yüksək likvidli maliyyə alətləri sahəsində ixtisaslaşmış investisiya şirkətidir.

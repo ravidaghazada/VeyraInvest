@@ -62,36 +62,64 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button
-                  onClick={() => setActiveView('landing')}
-                  className="hover:text-[#F6E09E] transition-colors"
+                <a
+                  href="/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('landing');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
                 >
                   Ana Səhifə
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveView('products')}
-                  className="hover:text-[#F6E09E] transition-colors"
+                <a
+                  href="/products"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('products');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
                 >
                   Veyra Home Məhsulları
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveView('calculator')}
-                  className="hover:text-[#F6E09E] transition-colors"
+                <a
+                  href="/calculator"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('calculator');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
                 >
                   Qazanc Kalkulyatoru
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveView('howItWorks')}
-                  className="hover:text-[#F6E09E] transition-colors"
+                <a
+                  href="/howitworks"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('howItWorks');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
                 >
                   Necə işləyir?
-                </button>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/visualizer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('visualizer');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
+                >
+                  3D Veyra Home Vizualizator
+                </a>
               </li>
             </ul>
           </div>
@@ -103,31 +131,53 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <button
-                  onClick={() => setActiveView('about')}
-                  className="hover:text-[#F6E09E] transition-colors"
+                <a
+                  href="/about"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('about');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
                 >
                   Haqqımızda
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveView('legal')}
-                  className="hover:text-[#F6E09E] transition-colors"
+                <a
+                  href="/legal"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('legal');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
                 >
                   Hüquqi Şəffaflıq & Lisenziya
-                </button>
+                </a>
               </li>
               <li>
-                <span className="text-white/30">Məxfilik Siyasəti</span>
+                <a
+                  href="/legal"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('legal');
+                  }}
+                  className="hover:text-[#F6E09E] transition-colors cursor-pointer"
+                >
+                  Məxfilik Siyasəti və Qaydalar
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => setActiveView('admin')}
-                  className="text-amber-400 hover:text-amber-300 font-semibold"
+                <a
+                  href="/admin"
+                  rel="nofollow"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveView('admin');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
                 >
                   Mərkəzi Admin Girişi
-                </button>
+                </a>
               </li>
             </ul>
           </div>

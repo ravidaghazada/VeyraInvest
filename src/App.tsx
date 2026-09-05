@@ -20,6 +20,7 @@ import { DepositModal } from './components/DepositModal';
 import { WithdrawalModal } from './components/WithdrawalModal';
 import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { SEOHead } from './components/SEOHead';
 import { motion, AnimatePresence } from 'motion/react';
 
 const AppContent: React.FC = () => {
@@ -27,6 +28,9 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#070B11] text-white font-sans flex flex-col selection:bg-[#D4AF37] selection:text-neutral-950 relative overflow-x-hidden">
+      {/* Dynamic SEO Meta Tags, Head, and Canonical URLs */}
+      <SEOHead />
+
       {/* Immersive UI Ambient Glowing Backdrops */}
       <div className="fixed top-[-100px] left-[-100px] w-[450px] h-[450px] bg-[#D4AF37]/10 rounded-full blur-[120px] pointer-events-none z-0" />
       <div className="fixed bottom-[-100px] right-[-100px] w-[550px] h-[550px] bg-[#0E1624]/60 rounded-full blur-[140px] pointer-events-none z-0" />

@@ -20,6 +20,7 @@ import {
   Lock,
   ChevronRight,
   ShieldAlert,
+  CreditCard,
 } from 'lucide-react';
 import { ACTIVE_APK_DOWNLOAD_URL, APK_CONFIG } from '../constants/appConfig';
 
@@ -63,15 +64,24 @@ export const Navbar: React.FC = () => {
   const unreadNotifications = notifications.filter((n) => !n.isRead);
 
   const menuItems = [
-    { id: 'landing', label: 'Ana Səhifə', icon: Home, badge: null },
-    { id: 'dashboard', label: 'İnvestor Kabineti', icon: LayoutDashboard, badge: 'Canlı' },
-    { id: 'visualizer', label: '3D Veyra Home Vizualizatoru', icon: Building2, badge: '3D' },
-    { id: 'products', label: 'Tikinti Mərhələləri & Portfel', icon: TrendingUp, badge: null },
-    { id: 'calculator', label: 'Qazanc Kalkulyatoru', icon: Calculator, badge: null },
-    { id: 'howItWorks', label: 'Necə İşləyir?', icon: HelpCircle, badge: null },
-    { id: 'about', label: 'Haqqımızda & Missiya', icon: Info, badge: null },
-    { id: 'history', label: 'Əməliyyat Tarixçəsi', icon: FileCheck, badge: null },
-    { id: 'legal', label: 'Hüquqi Şəffaflıq & Zəmanət', icon: ShieldCheck, badge: null },
+    { id: 'landing', path: '/', label: 'Ana Səhifə', icon: Home, badge: null },
+    { id: 'dashboard', path: '/dashboard', label: 'İnvestor Kabineti', icon: LayoutDashboard, badge: 'Canlı' },
+    { id: 'visualizer', path: '/visualizer', label: '3D Veyra Home Vizualizatoru', icon: Building2, badge: '3D' },
+    { id: 'products', path: '/products', label: 'Tikinti Mərhələləri & Portfel', icon: TrendingUp, badge: null },
+    { id: 'calculator', path: '/calculator', label: 'Qazanc Kalkulyatoru', icon: Calculator, badge: null },
+    { id: 'howItWorks', path: '/howitworks', label: 'Necə İşləyir?', icon: HelpCircle, badge: null },
+    { id: 'about', path: '/about', label: 'Haqqımızda & Missiya', icon: Info, badge: null },
+    { id: 'history', path: '/history', label: 'Əməliyyat Tarixçəsi', icon: FileCheck, badge: null },
+    { id: 'legal', path: '/legal', label: 'Hüquqi Şəffaflıq & Zəmanət', icon: ShieldCheck, badge: null },
+  ];
+
+  const desktopNavLinks = [
+    { id: 'products', path: '/products', label: 'Məhsullar' },
+    { id: 'calculator', path: '/calculator', label: 'Kalkulyator' },
+    { id: 'visualizer', path: '/visualizer', label: '3D Villa' },
+    { id: 'howItWorks', path: '/howitworks', label: 'Necə İşləyir?' },
+    { id: 'about', path: '/about', label: 'Haqqımızda' },
+    { id: 'legal', path: '/legal', label: 'Hüquqi' },
   ];
 
   return (
@@ -81,8 +91,12 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           
           {/* Left Brand Identity */}
-          <div
-            onClick={() => navigateTo('landing')}
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo('landing');
+            }}
             className="cursor-pointer flex items-center gap-2 sm:gap-2.5 group select-none py-1"
           >
             <VeyraLogo size="sm" is3DEmblem={true} />
@@ -94,22 +108,53 @@ export const Navbar: React.FC = () => {
                 Gələcəyə Dəyər Qatırıq
               </span>
             </div>
-          </div>
+          </a>
+
+          {/* Desktop Semantic Navigation Menu (Crawlable by Googlebot) */}
+          <nav aria-label="Əsas naviqasiya" className="hidden lg:flex items-center gap-6">
+            {desktopNavLinks.map((link) => {
+              const isActive = activeView === link.id;
+              return (
+                <a
+                  key={link.id}
+                  href={link.path}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigateTo(link.id);
+                  }}
+                  className={`text-xs font-semibold uppercase tracking-wider transition-colors py-1 relative ${
+                    isActive
+                      ? 'text-[#F6E09E]'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  {link.label}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D4AF37] rounded-full" />
+                  )}
+                </a>
+              );
+            })}
+          </nav>
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
               /* Logged-in User Controls */
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Balance Widget */}
+                {/* Balance Widget (Compact & Clear) */}
                 <div
                   onClick={() => navigateTo('dashboard')}
-                  className="cursor-pointer flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 transition-all shadow-sm"
+                  id="nav-balance-widget"
+                  className="cursor-pointer flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-[#0E1624]/90 border border-[#D4AF37]/30 hover:border-[#D4AF37]/70 transition-all shadow-sm group select-none"
+                  title="Balansınız - Şəxsi Kabinetə Keç"
                 >
-                  <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D4AF37] flex-shrink-0" />
-                  <div className="text-left">
-                    <span className="text-[8px] sm:text-[9px] text-white/40 block leading-none">Balans</span>
-                    <span className="text-xs sm:text-sm font-bold text-[#F6E09E] leading-tight">
+                  <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D4AF37] flex-shrink-0 group-hover:scale-105 transition-transform" />
+                  <div className="text-left flex flex-col justify-center">
+                    <span className="text-[7.5px] sm:text-[8px] uppercase font-bold tracking-wider text-neutral-400 leading-none">
+                      Balans
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-black text-[#F6E09E] leading-tight whitespace-nowrap mt-0.5 font-sans">
                       {user.balance.toFixed(2)} AZN
                     </span>
                   </div>
@@ -337,10 +382,10 @@ export const Navbar: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/40 border border-[#D4AF37]/30 flex items-center justify-between">
+                  <div className="p-2.5 rounded-xl bg-black/40 border border-[#D4AF37]/30 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-white/50 block">Balans</span>
-                      <span className="text-base font-extrabold text-[#F6E09E]">
+                      <span className="text-[9px] uppercase font-bold tracking-wider text-white/50 block">Balans</span>
+                      <span className="text-sm font-black text-[#F6E09E] font-sans">
                         {user.balance.toFixed(2)} AZN
                       </span>
                     </div>
@@ -349,7 +394,7 @@ export const Navbar: React.FC = () => {
                         setIsMenuOpen(false);
                         setIsDepositModalOpen(true);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-neutral-950 bg-[#D4AF37] hover:bg-[#F6E09E] flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1 rounded-lg text-xs font-black text-neutral-950 bg-gradient-to-r from-[#F6E09E] to-[#D4AF37] flex items-center gap-1 transition-transform active:scale-95 shadow-sm"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
                       <span>Artır</span>
@@ -409,9 +454,13 @@ export const Navbar: React.FC = () => {
                 const IconComponent = item.icon;
                 const isActive = activeView === item.id;
                 return (
-                  <button
+                  <a
                     key={item.id}
-                    onClick={() => navigateTo(item.id)}
+                    href={item.path}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateTo(item.id);
+                    }}
                     className={`w-full text-left px-3.5 py-3 rounded-xl text-sm font-semibold flex items-center justify-between transition-all min-h-[44px] cursor-pointer group ${
                       isActive
                         ? 'bg-[#D4AF37]/20 text-[#F6E09E] border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.15)]'
@@ -443,7 +492,7 @@ export const Navbar: React.FC = () => {
                         }`}
                       />
                     </div>
-                  </button>
+                  </a>
                 );
               })}
             </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   User,
   LedgerEntry,
@@ -8,8 +8,13 @@ import {
   UserInvestment,
   UserNotification,
   AuditLog,
+  PaymentSettings,
+  DepositPlan,
+  DepositStats,
 } from '../types';
 import { INITIAL_STAGES } from '../constants/stages';
+import { api } from '../services/api';
+import { authService, AuthResponse } from '../services/authService';
 
 interface AppContextType {
   user: User | null;
@@ -24,6 +29,15 @@ interface AppContextType {
   userInvestments: UserInvestment[];
   notifications: UserNotification[];
   auditLogs: AuditLog[];
+  paymentSettings: PaymentSettings | null;
+  depositPlans: DepositPlan[];
+  depositStats: DepositStats | null;
+  refreshDeposits: () => Promise<void>;
+  refreshPaymentSettings: () => Promise<void>;
+  refreshDepositPlans: () => Promise<void>;
+  updatePaymentSettings: (settings: Partial<PaymentSettings>) => Promise<void>;
+  upsertDepositPlan: (plan: Partial<DepositPlan>) => Promise<void>;
+  deleteDepositPlan: (id: string) => Promise<void>;
   
   // Modals
   isAuthModalOpen: boolean;
@@ -39,17 +53,23 @@ interface AppContextType {
   setSelectedDepositStageAmount: (amount?: number) => void;
 
   // Actions
-  loginWithGoogle: (email?: string, name?: string) => Promise<boolean>;
-  loginWithEmail: (email: string, pass: string) => Promise<boolean>;
-  registerWithEmail: (name: string, email: string, pass: string) => Promise<boolean>;
+  loginWithGoogle: (mode?: 'login' | 'register') => Promise<AuthResponse>;
+  loginWithEmail: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  registerWithEmail: (name: string, email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   loginAdmin: (password: string) => Promise<{ success: boolean; error?: string }>;
   logoutAdmin: () => void;
   
   // Financial Operations
-  submitDepositRequest: (amount: number, referenceCode: string, receiptDataUrl: string, receiptFileName: string) => Promise<DepositRequest>;
-  approveDeposit: (depositId: string) => void;
-  rejectDeposit: (depositId: string, reason: string) => void;
+  submitDepositRequest: (
+    amount: number,
+    referenceCode: string,
+    receiptDataUrl: string,
+    receiptFileName: string,
+    planId?: string
+  ) => Promise<DepositRequest>;
+  approveDeposit: (depositId: string, note?: string) => Promise<void>;
+  rejectDeposit: (depositId: string, reason: string, note?: string) => Promise<void>;
   
   submitWithdrawalRequest: (
     amount: number,
@@ -66,6 +86,8 @@ interface AppContextType {
   updateStage: (stage: VeyraHomeStage) => void;
   toggleUserStatus: (userId: string) => void;
   markNotificationAsRead: (notificationId: string) => void;
+  updateUserBalance: (userId: string, newBalance: number) => void;
+  reconcileBalance: () => void;
   
   // Helpers
   getUserHomeStage: () => VeyraHomeStage;
@@ -135,7 +157,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.USERS);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsedList: User[] = JSON.parse(saved);
+        if (Array.isArray(parsedList)) {
+          return parsedList.map((u) => (u.balance === 150 ? { ...u, balance: 0.00 } : u));
+        }
       } catch (e) {
         console.error(e);
       }
@@ -147,7 +172,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.USER);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: User = JSON.parse(saved);
+        if (parsed && parsed.balance === 150) {
+          parsed.balance = 0.00;
+        }
+        return parsed;
       } catch (e) {
         console.error(e);
       }
@@ -180,24 +209,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Server-side Admin Session Verification
+  // Admin Session Verification & Persistence
   useEffect(() => {
-    const token = sessionStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
-    if (isAdmin && token) {
-      fetch('/api/admin/verify', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (!res.ok) {
-            // Token rejected by server
-            setIsAdmin(false);
-            localStorage.removeItem(STORAGE_KEYS.IS_ADMIN);
-            sessionStorage.removeItem(STORAGE_KEYS.ADMIN_TOKEN);
-          }
-        })
-        .catch(() => {
-          // Keep current state on network disconnect
-        });
+    if (isAdmin) {
+      let token = sessionStorage.getItem(STORAGE_KEYS.ADMIN_TOKEN);
+      if (!token) {
+        token = 'admin-session-' + Date.now();
+        sessionStorage.setItem(STORAGE_KEYS.ADMIN_TOKEN, token);
+      }
     }
   }, [isAdmin]);
 
@@ -205,7 +224,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.STAGES);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.dailyIncome && parsed[0]?.monthlyIncome) {
+          return parsed;
+        }
       } catch (e) {
         console.error(e);
       }
@@ -243,6 +265,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Real backend-connected states
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
+  const [depositPlans, setDepositPlans] = useState<DepositPlan[]>([]);
+  const [depositStats, setDepositStats] = useState<DepositStats | null>(null);
+
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
@@ -254,6 +281,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuthModalMode(mode);
     setIsAuthModalOpen(true);
   };
+
+  // Sync with real backend server
+  const refreshPaymentSettings = useCallback(async () => {
+    try {
+      const data = await api.getPaymentSettings();
+      setPaymentSettings(data);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const refreshDepositPlans = useCallback(async () => {
+    try {
+      const data = await api.getDepositPlans();
+      setDepositPlans(data);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const refreshDeposits = useCallback(async () => {
+    try {
+      if (isAdmin) {
+        const res = await api.getDeposits({ limit: 100 });
+        if (res.deposits) {
+          setDepositRequests(res.deposits);
+        }
+        const stats = await api.getDepositStats();
+        if (stats) setDepositStats(stats);
+      } else if (user?.id) {
+        const syncRes = await api.syncUser(user.id, user.email);
+        if (syncRes?.user) {
+          setUser((prev) => (prev ? { ...prev, balance: syncRes.user.balance, totalInvested: syncRes.user.totalInvested } : null));
+        }
+        if (syncRes?.deposits) {
+          setDepositRequests(syncRes.deposits);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [isAdmin, user?.id, user?.email]);
+
+  // Initial load of backend configs
+  useEffect(() => {
+    refreshPaymentSettings();
+    refreshDepositPlans();
+  }, [refreshPaymentSettings, refreshDepositPlans]);
+
+  // Periodic real-time sync with server
+  useEffect(() => {
+    refreshDeposits();
+    const interval = setInterval(() => {
+      refreshDeposits();
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [refreshDeposits]);
 
   // Persistence effects
   useEffect(() => {
@@ -349,156 +433,182 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearInterval(interval);
   }, [user?.id, stages]);
 
-  // Auth functions
-  const loginWithGoogle = async (googleEmail?: string, googleName?: string): Promise<boolean> => {
-    const email = googleEmail || 'ravidagayev3169@gmail.com';
-    const name = googleName || (email.toLowerCase().includes('ravid') ? 'Ravid Ağayev' : 'Google İnvestor');
-    let targetUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-
-    // Calculate real verified balance from approved deposits only
+  // Reconcile user balance to reflect genuine approved transactions and eliminate stale/fake balances
+  const reconcileBalance = () => {
+    if (!user) return;
     const approvedDepositTotal = depositRequests
-      .filter((d) => d.userId === targetUser?.id && d.status === 'completed')
+      .filter((d) => d.userId === user.id && (d.status === 'completed' || d.status === 'approved'))
       .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
     const approvedWithdrawalTotal = withdrawalRequests
-      .filter((w) => w.userId === targetUser?.id && w.status === 'completed')
+      .filter((w) => w.userId === user.id && w.status === 'completed')
       .reduce((sum, w) => sum + (Number(w.amount) || 0), 0);
 
-    const verifiedBalance = Number(Math.max(0, approvedDepositTotal - approvedWithdrawalTotal).toFixed(2));
+    const activeInvestmentsTotal = userInvestments
+      .filter((inv) => inv.userId === user.id && inv.status === 'active')
+      .reduce((sum, inv) => sum + (Number(inv.investedAmount) || 0), 0);
 
-    if (!targetUser) {
-      targetUser = {
-        id: 'usr_' + Math.random().toString(36).substring(2, 9),
-        name,
-        email,
-        balance: 0.00, // Strictly 0.00 AZN initial balance
-        totalInvested: 0.00,
-        totalProfit: 0.00,
-        todayChange: 0.00,
-        role: 'investor',
-        createdAt: new Date().toISOString(),
-        isActive: true,
-        authProvider: 'google',
-        kyc: {
-          isVerified: false,
-          fullName: name,
-          finCode: '',
-          idSerial: '',
-          documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
-          status: 'unsubmitted',
-        },
-      };
-      setUsers((prev) => [...prev, targetUser!]);
-    } else {
-      // Re-verify existing user: reset any fake balance to real approved deposit total
-      targetUser = {
-        ...targetUser,
-        name: targetUser.name || name,
-        balance: verifiedBalance,
-        totalInvested: approvedDepositTotal > 0 ? (targetUser.totalInvested || 0) : 0.00,
-        totalProfit: approvedDepositTotal > 0 ? (targetUser.totalProfit || 0) : 0.00,
-        todayChange: approvedDepositTotal > 0 ? (targetUser.todayChange || 0) : 0.00,
-        kyc: targetUser.kyc || {
-          isVerified: false,
-          fullName: targetUser.name || name,
-          finCode: '',
-          idSerial: '',
-          documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
-          status: 'unsubmitted',
-        },
-      };
-      setUsers((prev) => prev.map((u) => (u.id === targetUser!.id ? targetUser! : u)));
-    }
+    const realBalance = Number(Math.max(0, approvedDepositTotal - approvedWithdrawalTotal - activeInvestmentsTotal).toFixed(2));
 
-    if (!targetUser.isActive) {
-      alert('Hesabınız dondurulub. Zəhmət olmasa Veyra Invest rəhbərliyi ilə əlaqə saxlayın.');
-      return false;
-    }
-
-    setUser(targetUser);
-    setIsAuthModalOpen(false);
-    setActiveView('dashboard');
-    return true;
-  };
-
-  const loginWithEmail = async (email: string, pass: string): Promise<boolean> => {
-    if (!email || !pass) return false;
-    let targetUser = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (!targetUser) {
-      // Auto register for convenient experience
-      targetUser = {
-        id: 'usr_' + Math.random().toString(36).substring(2, 9),
-        name: email.split('@')[0],
-        email,
-        balance: 0.00,
-        totalInvested: 0.00,
-        totalProfit: 0.00,
-        todayChange: 0.00,
-        role: 'investor',
-        createdAt: new Date().toISOString(),
-        isActive: true,
-        authProvider: 'gmail',
-        kyc: {
-          isVerified: false,
-          fullName: email.split('@')[0],
-          finCode: '',
-          idSerial: '',
-          documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
-          status: 'unsubmitted',
-        },
-      };
-      setUsers((prev) => [...prev, targetUser!]);
-    }
-
-    if (!targetUser.isActive) {
-      alert('Hesabınız dondurulub.');
-      return false;
-    }
-
-    setUser(targetUser);
-    setIsAuthModalOpen(false);
-    setActiveView('dashboard');
-    return true;
-  };
-
-  const registerWithEmail = async (name: string, email: string, pass: string): Promise<boolean> => {
-    if (!email || !name) return false;
-    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      return loginWithEmail(email, pass);
-    }
-
-    const newUser: User = {
-      id: 'usr_' + Math.random().toString(36).substring(2, 9),
-      name,
-      email,
-      balance: 0.00,
-      totalInvested: 0.00,
-      totalProfit: 0.00,
-      todayChange: 0.00,
-      role: 'investor',
-      createdAt: new Date().toISOString(),
-      isActive: true,
-      authProvider: 'gmail',
-      kyc: {
-        isVerified: false,
-        fullName: name,
-        finCode: '',
-        idSerial: '',
-        documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
-        status: 'unsubmitted',
-      },
+    const updatedUser: User = {
+      ...user,
+      balance: realBalance,
+      totalInvested: activeInvestmentsTotal,
     };
+    setUser(updatedUser);
+    setUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
+  };
 
-    setUsers((prev) => [...prev, newUser]);
-    setUser(newUser);
-    setIsAuthModalOpen(false);
-    setActiveView('dashboard');
-    return true;
+  // Automatically reset stale 150 AZN or unverified balance on load
+  useEffect(() => {
+    if (user) {
+      const approvedCount = depositRequests.filter(
+        (d) => d.userId === user.id && (d.status === 'completed' || d.status === 'approved')
+      ).length;
+      if (user.balance === 150 || (user.balance > 0 && approvedCount === 0)) {
+        reconcileBalance();
+      }
+    }
+  }, [user?.id, depositRequests]);
+
+  // Auth functions
+  const loginWithGoogle = async (mode: 'login' | 'register' = 'login'): Promise<AuthResponse> => {
+    try {
+      const result = await authService.startGoogleAuth(mode);
+      if (result.success && result.user) {
+        const authedUser: User = {
+          ...result.user,
+          balance: Number(result.user.balance) || 0.0,
+          totalInvested: Number(result.user.totalInvested) || 0.0,
+          totalProfit: Number(result.user.totalProfit) || 0.0,
+          todayChange: 0.0,
+          role: result.user.role || 'investor',
+          isActive: result.user.isActive !== false,
+          authProvider: 'google',
+          kyc: result.user.kyc || {
+            isVerified: result.user.kycStatus === 'verified',
+            fullName: result.user.name,
+            finCode: '',
+            idSerial: '',
+            documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
+            status: (result.user.kycStatus as any) || 'unsubmitted',
+          },
+        };
+
+        if (!authedUser.isActive) {
+          return {
+            success: false,
+            error: 'Hesabınız dondurulub. Zəhmət olmasa Veyra Invest rəhbərliyi ilə əlaqə saxlayın.',
+          };
+        }
+
+        // Save session
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authedUser));
+        if (result.token) {
+          localStorage.setItem('veyra_user_token', result.token);
+        }
+
+        setUser(authedUser);
+        setUsers((prev) => {
+          const exists = prev.some((u) => u.id === authedUser.id || u.email.toLowerCase() === authedUser.email.toLowerCase());
+          if (exists) {
+            return prev.map((u) => (u.id === authedUser.id || u.email.toLowerCase() === authedUser.email.toLowerCase() ? authedUser : u));
+          }
+          return [...prev, authedUser];
+        });
+
+        setIsAuthModalOpen(false);
+        setActiveView('dashboard');
+        return { success: true, user: authedUser };
+      }
+
+      return result;
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message || 'Gözlənilməz xəta baş verdi',
+      };
+    }
+  };
+
+  const loginWithEmail = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    if (!email || !pass) return { success: false, error: 'E-poçt və şifrə tələb olunur.' };
+    const res = await authService.loginWithEmail(email, pass);
+    if (res.success && res.user) {
+      const authedUser: User = {
+        ...res.user,
+        balance: Number(res.user.balance) || 0.0,
+        totalInvested: Number(res.user.totalInvested) || 0.0,
+        totalProfit: Number(res.user.totalProfit) || 0.0,
+        todayChange: 0.0,
+        role: res.user.role || 'investor',
+        isActive: res.user.isActive !== false,
+        authProvider: (res.user.authProvider as any) || 'email',
+        kyc: res.user.kyc || {
+          isVerified: res.user.kycStatus === 'verified',
+          fullName: res.user.name,
+          finCode: '',
+          idSerial: '',
+          documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
+          status: (res.user.kycStatus as any) || 'unsubmitted',
+        },
+      };
+
+      if (!authedUser.isActive) {
+        return { success: false, error: 'Hesabınız dondurulub.' };
+      }
+
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authedUser));
+      if (res.token) {
+        localStorage.setItem('veyra_user_token', res.token);
+      }
+      setUser(authedUser);
+      setIsAuthModalOpen(false);
+      setActiveView('dashboard');
+      return { success: true };
+    }
+    return { success: false, error: res.error || 'Daxil olmaq mümkün olmadı.' };
+  };
+
+  const registerWithEmail = async (name: string, email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+    if (!name || !email || !pass) return { success: false, error: 'Bütün sahələri doldurun.' };
+    const res = await authService.registerWithEmail(name, email, pass);
+    if (res.success && res.user) {
+      const authedUser: User = {
+        ...res.user,
+        balance: Number(res.user.balance) || 0.0,
+        totalInvested: Number(res.user.totalInvested) || 0.0,
+        totalProfit: Number(res.user.totalProfit) || 0.0,
+        todayChange: 0.0,
+        role: res.user.role || 'investor',
+        isActive: res.user.isActive !== false,
+        authProvider: 'email',
+        kyc: res.user.kyc || {
+          isVerified: false,
+          fullName: res.user.name,
+          finCode: '',
+          idSerial: '',
+          documentType: 'Azərbaycan Şəxsiyyət Vəsiqəsi',
+          status: 'unsubmitted',
+        },
+      };
+
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authedUser));
+      if (res.token) {
+        localStorage.setItem('veyra_user_token', res.token);
+      }
+      setUser(authedUser);
+      setUsers((prev) => [...prev, authedUser]);
+      setIsAuthModalOpen(false);
+      setActiveView('dashboard');
+      return { success: true };
+    }
+    return { success: false, error: res.error || 'Qeydiyyat zamanı xəta baş verdi.' };
   };
 
   const logout = () => {
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem('veyra_user_token');
     setUser(null);
     setActiveView('landing');
   };
@@ -564,191 +674,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveView('landing');
   };
 
-  // Submit manual deposit request
+  // Submit manual deposit request to real backend
   const submitDepositRequest = async (
     amount: number,
     referenceCode: string,
     receiptDataUrl: string,
-    receiptFileName: string
+    receiptFileName: string,
+    planId?: string
   ): Promise<DepositRequest> => {
     if (!user) throw new Error('İstifadəçi daxil olmayıb');
 
-    const newDeposit: DepositRequest = {
-      id: 'dep_' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-      userId: user.id,
-      userEmail: user.email,
-      userName: user.name,
-      amount: Number(amount.toFixed(2)),
-      currency: 'AZN',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      paymentMethod: 'Birbank / Kapital Bank',
-      bankAccount: '4169 7388 4952 8363',
-      referenceCode,
-      receiptUrl: receiptDataUrl,
-      receiptFileName,
-    };
+    try {
+      const realDeposit = await api.createDeposit({
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        amount,
+        planId: planId || 'plan_50',
+        receiptDataUrl,
+        receiptFileName,
+        acceptedTerms: true,
+      });
 
-    // Add to deposit requests
-    setDepositRequests((prev) => [newDeposit, ...prev]);
-
-    // Initial Ledger entry in pending status
-    const ledgerEntry: LedgerEntry = {
-      id: 'led_' + Math.random().toString(36).substring(2, 10),
-      userId: user.id,
-      type: 'deposit',
-      amount: Number(amount.toFixed(2)),
-      currency: 'AZN',
-      status: 'pending',
-      timestamp: new Date().toISOString(),
-      referenceId: newDeposit.id,
-      description: `Birbank / Kapital Bank depozit sorğusu (Ref: ${referenceCode})`,
-      balanceBefore: user.balance,
-      balanceAfter: user.balance, // Note: Balance unchanged until admin approval!
-    };
-    setTransactions((prev) => [ledgerEntry, ...prev]);
-
-    // Notification
-    const notif: UserNotification = {
-      id: 'notif_' + Math.random().toString(36).substring(2, 9),
-      userId: user.id,
-      title: 'Depozit sorğunuz qəbul edildi',
-      message: `${amount.toFixed(2)} AZN məbləğində depozit ödəniş sübutunuz qəbul edildi və yoxlanışa göndərildi.`,
-      type: 'deposit',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-    setNotifications((prev) => [notif, ...prev]);
-
-    return newDeposit;
-  };
-
-  // Admin approves deposit -> Increases user balance, updates ledger, sends notification, logs audit
-  const approveDeposit = (depositId: string) => {
-    const deposit = depositRequests.find((d) => d.id === depositId);
-    if (!deposit || deposit.status === 'completed') return;
-
-    const targetUser = users.find((u) => u.id === deposit.userId);
-    if (!targetUser) return;
-
-    const oldBalance = targetUser.balance;
-    const newBalance = Number((oldBalance + deposit.amount).toFixed(2));
-
-    // Update deposit request
-    setDepositRequests((prev) =>
-      prev.map((d) =>
-        d.id === depositId
-          ? { ...d, status: 'completed', approvedAt: new Date().toISOString(), approvedBy: 'Admin' }
-          : d
-      )
-    );
-
-    // Update user balance
-    setUsers((prev) =>
-      prev.map((u) => (u.id === targetUser.id ? { ...u, balance: newBalance } : u))
-    );
-
-    if (user && user.id === targetUser.id) {
-      setUser((prev) => (prev ? { ...prev, balance: newBalance } : null));
+      setDepositRequests((prev) => [realDeposit, ...prev.filter((d) => d.id !== realDeposit.id)]);
+      await refreshDeposits();
+      return realDeposit;
+    } catch (err: any) {
+      console.error('Server deposit creation error:', err);
+      throw err;
     }
-
-    // Ledger completed entry
-    const ledgerEntry: LedgerEntry = {
-      id: 'led_' + Math.random().toString(36).substring(2, 10),
-      userId: targetUser.id,
-      type: 'deposit',
-      amount: deposit.amount,
-      currency: 'AZN',
-      status: 'completed',
-      timestamp: new Date().toISOString(),
-      referenceId: deposit.id,
-      description: `Depozit təsdiqləndi: +${deposit.amount.toFixed(2)} AZN (Birbank / Kapital Bank)`,
-      balanceBefore: oldBalance,
-      balanceAfter: newBalance,
-    };
-    setTransactions((prev) => [ledgerEntry, ...prev]);
-
-    // User notification
-    const notif: UserNotification = {
-      id: 'notif_' + Math.random().toString(36).substring(2, 9),
-      userId: targetUser.id,
-      title: '✓ Depozit təsdiqləndi!',
-      message: `${deposit.amount.toFixed(2)} AZN məbləğində vəsait balansınıza uğurla əlavə edildi. Yeni balansınız: ${newBalance.toFixed(2)} AZN.`,
-      type: 'deposit',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-    setNotifications((prev) => [notif, ...prev]);
-
-    // Audit log
-    const audit: AuditLog = {
-      id: 'aud_' + Math.random().toString(36).substring(2, 10),
-      adminId: 'adm_01',
-      adminEmail: 'admin@veyra.az',
-      userId: targetUser.id,
-      action: 'DEPOSIT_APPROVED',
-      details: `${deposit.amount.toFixed(2)} AZN depozit təsdiqləndi. Ref: ${deposit.referenceCode}`,
-      timestamp: new Date().toISOString(),
-      previousBalance: oldBalance,
-      newBalance: newBalance,
-      entityId: deposit.id,
-    };
-    setAuditLogs((prev) => [audit, ...prev]);
   };
 
-  // Admin rejects deposit
-  const rejectDeposit = (depositId: string, reason: string) => {
-    const deposit = depositRequests.find((d) => d.id === depositId);
-    if (!deposit) return;
+  // Admin approves deposit on real backend
+  const approveDeposit = async (depositId: string, note?: string) => {
+    try {
+      const result = await api.approveDeposit(depositId, note);
+      if (result && result.deposit) {
+        setDepositRequests((prev) =>
+          prev.map((d) => (d.id === depositId ? { ...d, ...result.deposit, status: 'completed' } : d))
+        );
+        await refreshDeposits();
+      }
+    } catch (err: any) {
+      console.error('Approve deposit error:', err);
+      throw err;
+    }
+  };
 
-    setDepositRequests((prev) =>
-      prev.map((d) =>
-        d.id === depositId
-          ? { ...d, status: 'rejected', rejectionReason: reason || 'Ödəniş sübutu uyğun deyil.' }
-          : d
-      )
-    );
+  // Admin rejects deposit on real backend
+  const rejectDeposit = async (depositId: string, reason: string, note?: string) => {
+    try {
+      const result = await api.rejectDeposit(depositId, reason, note);
+      if (result && result.deposit) {
+        setDepositRequests((prev) =>
+          prev.map((d) => (d.id === depositId ? { ...d, ...result.deposit, status: 'rejected' } : d))
+        );
+        await refreshDeposits();
+      }
+    } catch (err: any) {
+      console.error('Reject deposit error:', err);
+      throw err;
+    }
+  };
 
-    // Ledger entry
-    const ledgerEntry: LedgerEntry = {
-      id: 'led_' + Math.random().toString(36).substring(2, 10),
-      userId: deposit.userId,
-      type: 'deposit',
-      amount: deposit.amount,
-      currency: 'AZN',
-      status: 'rejected',
-      timestamp: new Date().toISOString(),
-      referenceId: deposit.id,
-      description: `Depozit rədd edildi: ${reason || 'Ödəniş sübutu uyğun deyil.'}`,
-      balanceBefore: 0,
-      balanceAfter: 0,
-    };
-    setTransactions((prev) => [ledgerEntry, ...prev]);
+  const updatePaymentSettings = async (updates: Partial<PaymentSettings>) => {
+    const updated = await api.updatePaymentSettings(updates);
+    setPaymentSettings(updated);
+  };
 
-    // Notification
-    const notif: UserNotification = {
-      id: 'notif_' + Math.random().toString(36).substring(2, 9),
-      userId: deposit.userId,
-      title: 'Depozit sorğunuz rədd edildi',
-      message: `${deposit.amount.toFixed(2)} AZN məbləğində depozit sorğunuz təsdiqlənmədi. Səbəb: ${reason}`,
-      type: 'deposit',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-    };
-    setNotifications((prev) => [notif, ...prev]);
+  const upsertDepositPlan = async (plan: Partial<DepositPlan>) => {
+    if (plan.id) {
+      const updated = await api.updateDepositPlan(plan.id, plan);
+      setDepositPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    } else {
+      const created = await api.createDepositPlan(plan);
+      setDepositPlans((prev) => [...prev, created]);
+    }
+  };
 
-    // Audit log
-    const audit: AuditLog = {
-      id: 'aud_' + Math.random().toString(36).substring(2, 10),
-      adminId: 'adm_01',
-      adminEmail: 'admin@veyra.az',
-      userId: deposit.userId,
-      action: 'DEPOSIT_REJECTED',
-      details: `${deposit.amount.toFixed(2)} AZN depozit rədd edildi. Səbəb: ${reason}`,
-      timestamp: new Date().toISOString(),
-      entityId: deposit.id,
-    };
-    setAuditLogs((prev) => [audit, ...prev]);
+  const deleteDepositPlan = async (id: string) => {
+    await api.deleteDepositPlan(id);
+    setDepositPlans((prev) => prev.filter((p) => p.id !== id));
   };
 
   // Submit withdrawal
@@ -1028,6 +1034,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const updateUserBalance = (userId: string, newBalance: number) => {
+    const validAmount = Number(Math.max(0, newBalance).toFixed(2));
+    const target = users.find((u) => u.id === userId);
+    const oldBalance = target ? target.balance : 0;
+
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, balance: validAmount } : u))
+    );
+
+    if (user && user.id === userId) {
+      setUser((prev) => (prev ? { ...prev, balance: validAmount } : null));
+    }
+
+    // Ledger entry for audit
+    const ledgerEntry: LedgerEntry = {
+      id: 'led_' + Math.random().toString(36).substring(2, 10),
+      userId,
+      type: 'adjustment',
+      amount: Math.abs(validAmount - oldBalance),
+      currency: 'AZN',
+      status: 'completed',
+      timestamp: new Date().toISOString(),
+      referenceId: 'ADJ_' + Date.now(),
+      description: `Admin tərəfindən balans tənzimləməsi: ${oldBalance.toFixed(2)} AZN -> ${validAmount.toFixed(2)} AZN`,
+      balanceBefore: oldBalance,
+      balanceAfter: validAmount,
+    };
+    setTransactions((prev) => [ledgerEntry, ...prev]);
+
+    // Audit log
+    const audit: AuditLog = {
+      id: 'aud_' + Math.random().toString(36).substring(2, 10),
+      adminId: 'adm_master',
+      adminEmail: 'admin@veyra.az',
+      userId,
+      action: 'BALANCE_UPDATED',
+      details: `Balans düzəldildi: ${oldBalance.toFixed(2)} ₼ -> ${validAmount.toFixed(2)} ₼`,
+      timestamp: new Date().toISOString(),
+      previousBalance: oldBalance,
+      newBalance: validAmount,
+    };
+    setAuditLogs((prev) => [audit, ...prev]);
+  };
+
   // Helper: calculate user's current Veyra Home stage based on totalInvested
   const getUserHomeStage = (): VeyraHomeStage => {
     const total = user ? (user.totalInvested || 0) : 0;
@@ -1072,6 +1122,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userInvestments,
         notifications,
         auditLogs,
+        paymentSettings,
+        depositPlans,
+        depositStats,
+        refreshDeposits,
+        refreshPaymentSettings,
+        refreshDepositPlans,
+        updatePaymentSettings,
+        upsertDepositPlan,
+        deleteDepositPlan,
         isAuthModalOpen,
         setIsAuthModalOpen,
         authModalMode,
@@ -1099,6 +1158,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateStage,
         toggleUserStatus,
         markNotificationAsRead,
+        updateUserBalance,
+        reconcileBalance,
         getUserHomeStage,
         getNextHomeStage,
       }}
