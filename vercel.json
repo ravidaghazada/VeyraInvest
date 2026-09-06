@@ -56,6 +56,10 @@
       "destination": "/api/$1"
     },
     {
+      "source": "/auth/callback",
+      "destination": "/api/auth/google/callback"
+    },
+    {
       "source": "/robots.txt",
       "destination": "/robots.txt"
     },

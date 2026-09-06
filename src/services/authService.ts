@@ -47,15 +47,46 @@ export const authService = {
   async getGoogleConfig(): Promise<GoogleAuthConfig> {
     try {
       const res = await fetch('/api/auth/google/config');
-      return await res.json();
-    } catch {
+      if (res.ok) {
+        const data = await res.json();
+        if (data && (data.clientId || data.hasClientId)) {
+          return {
+            success: true,
+            clientId: data.clientId || '',
+            hasClientId: Boolean(data.clientId || data.hasClientId),
+            callbackUrl: data.callbackUrl || `${window.location.origin}/api/auth/google/callback`,
+            appUrl: data.appUrl || window.location.origin,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch server Google OAuth config:', err);
+    }
+
+    // Client-side Vite environment variable fallback
+    const clientEnvId =
+      (typeof import.meta !== 'undefined' &&
+        ((import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
+          (import.meta as any).env?.GOOGLE_CLIENT_ID)) ||
+      '';
+
+    if (clientEnvId && clientEnvId.trim().length > 0) {
       return {
-        success: false,
-        clientId: '',
-        hasClientId: false,
+        success: true,
+        clientId: clientEnvId.trim(),
+        hasClientId: true,
         callbackUrl: `${window.location.origin}/api/auth/google/callback`,
+        appUrl: window.location.origin,
       };
     }
+
+    return {
+      success: false,
+      clientId: '',
+      hasClientId: false,
+      callbackUrl: `${window.location.origin}/api/auth/google/callback`,
+      appUrl: window.location.origin,
+    };
   },
 
   // Perform Real Google OAuth Login or Registration via standard OAuth 2.0 flow
@@ -74,15 +105,47 @@ export const authService = {
 
     try {
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-      const urlRes = await fetch(`/api/auth/google/url?mode=${mode}&origin=${encodeURIComponent(currentOrigin)}`);
-      const urlData = await urlRes.json();
+      let targetAuthUrl = '';
 
-      if (!urlData.success || !urlData.url) {
+      try {
+        const urlRes = await fetch(`/api/auth/google/url?mode=${mode}&origin=${encodeURIComponent(currentOrigin)}`);
+        if (urlRes.ok) {
+          const urlData = await urlRes.json();
+          if (urlData.success && urlData.url) {
+            targetAuthUrl = urlData.url;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch Google auth URL from server:', err);
+      }
+
+      // Fallback URL generation if endpoint returned error but client ID is known
+      if (!targetAuthUrl && config.clientId) {
+        const stateObj = {
+          mode,
+          origin: currentOrigin,
+          nonce: Math.random().toString(36).substring(2, 10),
+          timestamp: Date.now(),
+        };
+        const state = btoa(JSON.stringify(stateObj));
+        const params = new URLSearchParams({
+          client_id: config.clientId,
+          redirect_uri: config.callbackUrl,
+          response_type: 'code',
+          scope: 'openid email profile',
+          access_type: 'offline',
+          prompt: 'select_account',
+          state,
+        });
+        targetAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+      }
+
+      if (!targetAuthUrl) {
         return {
           success: false,
-          error: urlData.error || 'OAUTH_URL_ERROR',
-          message: urlData.message || 'Google OAuth keçid ünvanı alına bilmədi.',
-          callbackUrl: urlData.callbackUrl || config.callbackUrl,
+          error: 'OAUTH_URL_ERROR',
+          message: 'Google OAuth keçid ünvanı alına bilmədi.',
+          callbackUrl: config.callbackUrl,
         };
       }
 
@@ -93,7 +156,7 @@ export const authService = {
       const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
 
       const popup = window.open(
-        urlData.url,
+        targetAuthUrl,
         'GoogleSignInPopup',
         `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,menubar=no,location=yes,resizable=yes`
       );
