@@ -4,7 +4,7 @@ import {
   handleGoogleLoginOrRegister,
   readJsonBody,
   setCorsHeaders,
-} from '../../_auth';
+} from '../../_auth.ts';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   setCorsHeaders(res);

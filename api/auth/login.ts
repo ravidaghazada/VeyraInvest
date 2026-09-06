@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import type { IncomingMessage, ServerResponse } from 'http';
-import { db } from '../_db';
-import { generateUserSessionToken, readJsonBody, setCorsHeaders } from '../_auth';
+import { db } from '../_db.ts';
+import { generateUserSessionToken, readJsonBody, setCorsHeaders } from '../_auth.ts';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   setCorsHeaders(res);
@@ -20,7 +20,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   try {
-    const body = await readJsonBody(req);
+    const body =
+      (req as any).body && typeof (req as any).body === 'object'
+        ? (req as any).body
+        : await readJsonBody(req);
     const { email, password } = body || {};
 
     if (!email || !password) {

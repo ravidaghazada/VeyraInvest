@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { db } from './_db';
-import { verifyAdminToken } from './_utils';
+import { db } from './_db.ts';
+import { verifyAdminToken } from './_utils.ts';
 
 export default async function handler(req: IncomingMessage & { query?: any; body?: any }, res: ServerResponse & { status: any; json: any }) {
   res.setHeader('Access-Control-Allow-Origin', '*');

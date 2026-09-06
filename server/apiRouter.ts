@@ -492,21 +492,10 @@ apiRouter.put('/admin/users/:id/balance', requireAdmin, (req: Request, res: Resp
 // -------------------------------------------------------------
 
 const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
+const PRODUCTION_CALLBACK_URL = `${PRODUCTION_URL}/api/auth/google/callback`;
 
 function getAppUrl(req: Request): string {
-  const host = ((req.headers['x-forwarded-host'] as string) || req.headers.host || '').toLowerCase();
-  if (
-    process.env.VERCEL_ENV === 'production' ||
-    host.includes('veyrainvest.vercel.app') ||
-    host.includes('veyrainvest.az')
-  ) {
-    return PRODUCTION_URL;
-  }
-  if (process.env.APP_URL && !process.env.APP_URL.includes('localhost')) {
-    return process.env.APP_URL.replace(/\/+$/, '');
-  }
-  const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
-  return `${proto}://${host || 'localhost:3000'}`.replace(/\/+$/, '');
+  return PRODUCTION_URL;
 }
 
 export function generateUserSessionToken(user: any): { token: string; expiresAt: number } {
@@ -686,13 +675,13 @@ function renderAuthPopupResult(
 // Google OAuth Config Check
 apiRouter.get('/auth/google/config', (req: Request, res: Response) => {
   const clientId = process.env.GOOGLE_CLIENT_ID || '';
-  const callbackUrl = `${getAppUrl(req)}/api/auth/google/callback`;
+  const callbackUrl = PRODUCTION_CALLBACK_URL;
   return res.json({
     success: true,
     clientId,
     hasClientId: Boolean(clientId && clientId.trim().length > 0),
     callbackUrl,
-    appUrl: getAppUrl(req),
+    appUrl: PRODUCTION_URL,
   });
 });
 
@@ -700,8 +689,8 @@ apiRouter.get('/auth/google/config', (req: Request, res: Response) => {
 apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientOrigin = req.query.origin ? String(req.query.origin).replace(/\/+$/, '') : getAppUrl(req);
-    const callbackUrl = `${clientOrigin}/api/auth/google/callback`;
+    const clientOrigin = PRODUCTION_URL;
+    const callbackUrl = PRODUCTION_CALLBACK_URL;
 
     if (!clientId) {
       return res.status(400).json({
@@ -716,6 +705,7 @@ apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
     const stateObj = {
       mode,
       origin: clientOrigin,
+      redirect_uri: callbackUrl,
       nonce: crypto.randomBytes(16).toString('hex'),
       timestamp: Date.now(),
     };
@@ -766,16 +756,8 @@ apiRouter.get('/auth/google/callback', async (req: Request, res: Response) => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-    // Decode state to retrieve origin for exact redirect_uri matching
-    let callbackUrl = `${getAppUrl(req)}/api/auth/google/callback`;
-    if (state) {
-      try {
-        const decodedState = JSON.parse(Buffer.from(String(state), 'base64').toString('utf8'));
-        if (decodedState.origin) {
-          callbackUrl = `${decodedState.origin}/api/auth/google/callback`;
-        }
-      } catch {}
-    }
+    // Direct match with Google Cloud Console registered redirect URI
+    let callbackUrl = PRODUCTION_CALLBACK_URL;
 
     if (!clientId || !clientSecret) {
       return renderAuthPopupResult(

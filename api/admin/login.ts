@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getExpectedPassword, createAdminToken } from '../_utils';
+import { getExpectedPassword, createAdminToken } from '../_utils.ts';
 
 interface VercelRequest extends IncomingMessage {
   body?: any;

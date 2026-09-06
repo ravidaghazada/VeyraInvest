@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import type { IncomingMessage, ServerResponse } from 'http';
 
 const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
+const PRODUCTION_CALLBACK_URL = `${PRODUCTION_URL}/api/auth/google/callback`;
 
 export default function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,31 +20,9 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
     const urlObj = new URL(req.url || '', 'http://localhost');
     const queryOrigin = (urlObj.searchParams.get('origin') || '').trim();
 
-    const host = (req.headers['x-forwarded-host'] || req.headers.host || '').toString().toLowerCase();
-
-    // 1. Determine active origin: strict priority to production domain
-    let activeOrigin = PRODUCTION_URL;
-    if (queryOrigin && queryOrigin.includes('veyrainvest.vercel.app')) {
-      activeOrigin = PRODUCTION_URL;
-    } else if (
-      process.env.VERCEL_ENV === 'production' ||
-      host.includes('veyrainvest.vercel.app') ||
-      host.includes('veyrainvest.az')
-    ) {
-      activeOrigin = PRODUCTION_URL;
-    } else if (queryOrigin && !queryOrigin.includes('localhost') && !queryOrigin.includes('127.0.0.1')) {
-      activeOrigin = queryOrigin.replace(/\/+$/, '');
-    } else if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-      const proto = (req.headers['x-forwarded-proto'] || 'https').toString();
-      activeOrigin = `${proto}://${host}`.replace(/\/+$/, '');
-    } else if (queryOrigin && (queryOrigin.includes('localhost') || queryOrigin.includes('127.0.0.1'))) {
-      activeOrigin = queryOrigin.replace(/\/+$/, '');
-    } else if (host.includes('localhost') || host.includes('127.0.0.1')) {
-      const proto = (req.headers['x-forwarded-proto'] || 'http').toString();
-      activeOrigin = `${proto}://${host}`.replace(/\/+$/, '');
-    }
-
-    const callbackUrl = `${activeOrigin}/api/auth/google/callback`;
+    // Production origin and callback are strictly fixed to the authorized production domain
+    const activeOrigin = PRODUCTION_URL;
+    const callbackUrl = PRODUCTION_CALLBACK_URL;
 
     if (!clientId) {
       res.statusCode = 400;

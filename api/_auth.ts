@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import type { IncomingMessage, ServerResponse } from 'http';
-import { db, UserRecord } from './_db';
+import { db } from './_db.ts';
+import type { UserRecord } from './_db.ts';
 
 const JWT_SECRET = process.env.ADMIN_SECRET || 'veyra-invest-admin-secure-key-2026';
 
@@ -9,33 +10,21 @@ export const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
 export function getBaseAppUrl(req?: IncomingMessage): string {
   const host = (req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').toString().toLowerCase();
 
-  // 1. Production domain detection
+  // Any Vercel deployment or production host strictly maps to the canonical production URL
   if (
-    process.env.VERCEL_ENV === 'production' ||
-    host.includes('veyrainvest.vercel.app') ||
-    host.includes('veyrainvest.az')
+    !host ||
+    host.includes('vercel.app') ||
+    host.includes('veyrainvest') ||
+    process.env.VERCEL_ENV === 'production'
   ) {
     return PRODUCTION_URL;
   }
 
-  // 2. Custom host / Vercel preview branch
-  if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-    const proto = (req?.headers?.['x-forwarded-proto'] || 'https').toString();
-    return `${proto}://${host}`.replace(/\/+$/, '');
+  // Explicit APP_URL if set to production
+  if (process.env.APP_URL && process.env.APP_URL.includes('veyrainvest.vercel.app')) {
+    return PRODUCTION_URL;
   }
 
-  // 3. Explicit APP_URL if provided
-  if (process.env.APP_URL && !process.env.APP_URL.includes('localhost')) {
-    return process.env.APP_URL.replace(/\/+$/, '');
-  }
-
-  // 4. Localhost development
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    const proto = (req?.headers?.['x-forwarded-proto'] || 'http').toString();
-    return `${proto}://${host}`.replace(/\/+$/, '');
-  }
-
-  // 5. Default fallback to production
   return PRODUCTION_URL;
 }
 
@@ -51,17 +40,51 @@ export function setCorsHeaders(res: ServerResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-User-Id,x-user-id');
 }
 
-export async function readJsonBody(req: IncomingMessage): Promise<any> {
-  let bodyStr = '';
-  for await (const chunk of req) {
-    bodyStr += chunk;
+export async function readJsonBody(req: any): Promise<any> {
+  // 1. If Vercel / Express already parsed the body into an object
+  if (req.body) {
+    if (typeof req.body === 'object') return req.body;
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
   }
-  if (!bodyStr) return {};
-  try {
-    return JSON.parse(bodyStr);
-  } catch {
-    return {};
-  }
+
+  // 2. Read raw stream with standard events (compatible with all Node environments)
+  return new Promise((resolve) => {
+    try {
+      let bodyStr = '';
+      req.on('data', (chunk: any) => {
+        bodyStr += chunk;
+      });
+      req.on('end', () => {
+        if (!bodyStr) return resolve({});
+        try {
+          resolve(JSON.parse(bodyStr));
+        } catch {
+          resolve({});
+        }
+      });
+      req.on('error', () => {
+        resolve({});
+      });
+      // Safety timeout: don't hang if stream already ended
+      setTimeout(() => {
+        if (bodyStr) {
+          try {
+            resolve(JSON.parse(bodyStr));
+          } catch {
+            resolve({});
+          }
+        } else {
+          resolve({});
+        }
+      }, 500);
+    } catch {
+      resolve({});
+    }
+  });
 }
 
 export function generateUserSessionToken(user: UserRecord): { token: string; expiresAt: number } {

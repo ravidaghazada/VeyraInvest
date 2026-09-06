@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { db } from '../_db';
-import { setCorsHeaders, verifyUserToken } from '../_auth';
+import { db } from '../_db.ts';
+import { setCorsHeaders, verifyUserToken } from '../_auth.ts';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   setCorsHeaders(res);

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { verifyAdminToken } from '../_utils';
+import { verifyAdminToken } from '../_utils.ts';
 
 interface VercelRequest extends IncomingMessage {
   body?: any;
