@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getBaseAppUrl, getGoogleOAuthCredentials, setCorsHeaders } from '../../_auth';
 
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
-  setCorsHeaders(res);
+export default function handler(req: IncomingMessage, res: ServerResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
 
   if (req.method === 'OPTIONS') {
     res.statusCode = 200;
@@ -12,10 +13,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   try {
-    const { clientId } = getGoogleOAuthCredentials();
+    const clientId = (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
     const urlObj = new URL(req.url || '', 'http://localhost');
     const queryOrigin = urlObj.searchParams.get('origin');
-    const clientOrigin = (queryOrigin ? queryOrigin.replace(/\/+$/, '') : getBaseAppUrl(req)) || 'https://veyrainvest.vercel.app';
+
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'veyrainvest.vercel.app';
+    const proto = req.headers['x-forwarded-proto'] || (String(host).includes('localhost') ? 'http' : 'https');
+    const defaultOrigin = (process.env.APP_URL || `${proto}://${host}`).replace(/\/+$/, '');
+
+    const clientOrigin = (queryOrigin ? queryOrigin.replace(/\/+$/, '') : defaultOrigin) || 'https://veyrainvest.vercel.app';
     const callbackUrl = `${clientOrigin}/api/auth/google/callback`;
 
     if (!clientId) {

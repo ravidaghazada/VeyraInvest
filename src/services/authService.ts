@@ -91,53 +91,56 @@ export const authService = {
 
   // Perform Real Google OAuth Login or Registration via standard OAuth 2.0 flow
   async startGoogleAuth(mode: 'login' | 'register' = 'login'): Promise<AuthResponse> {
-    const config = await this.getGoogleConfig();
-
-    // Check if Google Client ID is configured
-    if (!config.hasClientId && !config.clientId) {
-      return {
-        success: false,
-        error: 'CONFIG_MISSING',
-        message: 'Google OAuth Client ID təyin edilməyib. Zəhmət olmasa layihə tənzimləmələrində GOOGLE_CLIENT_ID və GOOGLE_CLIENT_SECRET mühit dəyişənlərini əlavə edin.',
-        callbackUrl: config.callbackUrl,
-      };
-    }
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    let targetAuthUrl = '';
+    let fallbackCallbackUrl = `${currentOrigin}/api/auth/google/callback`;
 
     try {
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-      let targetAuthUrl = '';
-
+      // 1. Try to fetch direct Google auth URL from serverless endpoint
       try {
         const urlRes = await fetch(`/api/auth/google/url?mode=${mode}&origin=${encodeURIComponent(currentOrigin)}`);
         if (urlRes.ok) {
           const urlData = await urlRes.json();
           if (urlData.success && urlData.url) {
             targetAuthUrl = urlData.url;
+            if (urlData.callbackUrl) fallbackCallbackUrl = urlData.callbackUrl;
           }
         }
       } catch (err) {
         console.warn('Failed to fetch Google auth URL from server:', err);
       }
 
-      // Fallback URL generation if endpoint returned error but client ID is known
-      if (!targetAuthUrl && config.clientId) {
-        const stateObj = {
-          mode,
-          origin: currentOrigin,
-          nonce: Math.random().toString(36).substring(2, 10),
-          timestamp: Date.now(),
-        };
-        const state = btoa(JSON.stringify(stateObj));
-        const params = new URLSearchParams({
-          client_id: config.clientId,
-          redirect_uri: config.callbackUrl,
-          response_type: 'code',
-          scope: 'openid email profile',
-          access_type: 'offline',
-          prompt: 'select_account',
-          state,
-        });
-        targetAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+      // 2. If server URL wasn't retrieved directly, consult config / client environment
+      if (!targetAuthUrl) {
+        const config = await this.getGoogleConfig();
+        if (config.callbackUrl) fallbackCallbackUrl = config.callbackUrl;
+
+        if (config.clientId) {
+          const stateObj = {
+            mode,
+            origin: currentOrigin,
+            nonce: Math.random().toString(36).substring(2, 10),
+            timestamp: Date.now(),
+          };
+          const state = btoa(JSON.stringify(stateObj));
+          const params = new URLSearchParams({
+            client_id: config.clientId,
+            redirect_uri: fallbackCallbackUrl,
+            response_type: 'code',
+            scope: 'openid email profile',
+            access_type: 'offline',
+            prompt: 'select_account',
+            state,
+          });
+          targetAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+        } else {
+          return {
+            success: false,
+            error: 'CONFIG_MISSING',
+            message: 'Google OAuth Client ID təyin edilməyib. Zəhmət olmasa layihə tənzimləmələrində GOOGLE_CLIENT_ID və GOOGLE_CLIENT_SECRET mühit dəyişənlərini əlavə edin.',
+            callbackUrl: fallbackCallbackUrl,
+          };
+        }
       }
 
       if (!targetAuthUrl) {
@@ -145,7 +148,7 @@ export const authService = {
           success: false,
           error: 'OAUTH_URL_ERROR',
           message: 'Google OAuth keçid ünvanı alına bilmədi.',
-          callbackUrl: config.callbackUrl,
+          callbackUrl: fallbackCallbackUrl,
         };
       }
 

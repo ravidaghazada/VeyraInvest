@@ -238,8 +238,32 @@ export const AuthModal: React.FC = () => {
 
           {/* Error Alert */}
           {error && (
-            <div className="p-3 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-300 text-xs text-center font-medium">
-              {error}
+            <div className="p-3 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-300 text-xs text-center font-medium space-y-1.5">
+              <p>{error}</p>
+              {error.includes('Qeydiyyat') && mode === 'login' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('register');
+                    setError(null);
+                  }}
+                  className="inline-block text-[#F6E09E] underline hover:text-[#D4AF37] font-semibold text-[11px] cursor-pointer"
+                >
+                  Hesab yaratmaq üçün bura klikləyin (Qeydiyyat)
+                </button>
+              )}
+              {error.includes('Daxil ol') && mode === 'register' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setError(null);
+                  }}
+                  className="inline-block text-[#F6E09E] underline hover:text-[#D4AF37] font-semibold text-[11px] cursor-pointer"
+                >
+                  Hesabınıza daxil olmaq üçün bura klikləyin
+                </button>
+              )}
             </div>
           )}
 
