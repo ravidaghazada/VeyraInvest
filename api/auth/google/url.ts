@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import type { IncomingMessage, ServerResponse } from 'http';
 
+const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
+
 export default function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -15,14 +17,33 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
   try {
     const clientId = (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
     const urlObj = new URL(req.url || '', 'http://localhost');
-    const queryOrigin = urlObj.searchParams.get('origin');
+    const queryOrigin = (urlObj.searchParams.get('origin') || '').trim();
 
-    const host = req.headers['x-forwarded-host'] || req.headers.host || 'veyrainvest.vercel.app';
-    const proto = req.headers['x-forwarded-proto'] || (String(host).includes('localhost') ? 'http' : 'https');
-    const defaultOrigin = (process.env.APP_URL || `${proto}://${host}`).replace(/\/+$/, '');
+    const host = (req.headers['x-forwarded-host'] || req.headers.host || '').toString().toLowerCase();
 
-    const clientOrigin = (queryOrigin ? queryOrigin.replace(/\/+$/, '') : defaultOrigin) || 'https://veyrainvest.vercel.app';
-    const callbackUrl = `${clientOrigin}/api/auth/google/callback`;
+    // 1. Determine active origin: strict priority to production domain
+    let activeOrigin = PRODUCTION_URL;
+    if (queryOrigin && queryOrigin.includes('veyrainvest.vercel.app')) {
+      activeOrigin = PRODUCTION_URL;
+    } else if (
+      process.env.VERCEL_ENV === 'production' ||
+      host.includes('veyrainvest.vercel.app') ||
+      host.includes('veyrainvest.az')
+    ) {
+      activeOrigin = PRODUCTION_URL;
+    } else if (queryOrigin && !queryOrigin.includes('localhost') && !queryOrigin.includes('127.0.0.1')) {
+      activeOrigin = queryOrigin.replace(/\/+$/, '');
+    } else if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+      const proto = (req.headers['x-forwarded-proto'] || 'https').toString();
+      activeOrigin = `${proto}://${host}`.replace(/\/+$/, '');
+    } else if (queryOrigin && (queryOrigin.includes('localhost') || queryOrigin.includes('127.0.0.1'))) {
+      activeOrigin = queryOrigin.replace(/\/+$/, '');
+    } else if (host.includes('localhost') || host.includes('127.0.0.1')) {
+      const proto = (req.headers['x-forwarded-proto'] || 'http').toString();
+      activeOrigin = `${proto}://${host}`.replace(/\/+$/, '');
+    }
+
+    const callbackUrl = `${activeOrigin}/api/auth/google/callback`;
 
     if (!clientId) {
       res.statusCode = 400;
@@ -34,6 +55,7 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
           message:
             'Google OAuth Client ID təyin edilməyib. Zəhmət olmasa tənzimləmələrdə GOOGLE_CLIENT_ID əlavə edin.',
           callbackUrl,
+          productionUrl: PRODUCTION_URL,
         })
       );
       return;
@@ -42,7 +64,8 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
     const mode = urlObj.searchParams.get('mode') === 'register' ? 'register' : 'login';
     const stateObj = {
       mode,
-      origin: clientOrigin,
+      origin: activeOrigin,
+      redirect_uri: callbackUrl,
       nonce: crypto.randomBytes(16).toString('hex'),
       timestamp: Date.now(),
     };
@@ -62,7 +85,7 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ success: true, url, callbackUrl }));
+    res.end(JSON.stringify({ success: true, url, callbackUrl, productionUrl: PRODUCTION_URL }));
   } catch (err: any) {
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');

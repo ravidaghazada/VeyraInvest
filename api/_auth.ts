@@ -4,19 +4,45 @@ import { db, UserRecord } from './_db';
 
 const JWT_SECRET = process.env.ADMIN_SECRET || 'veyra-invest-admin-secure-key-2026';
 
-export function getBaseAppUrl(req: IncomingMessage): string {
-  if (process.env.APP_URL) {
+export const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
+
+export function getBaseAppUrl(req?: IncomingMessage): string {
+  const host = (req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').toString().toLowerCase();
+
+  // 1. Production domain detection
+  if (
+    process.env.VERCEL_ENV === 'production' ||
+    host.includes('veyrainvest.vercel.app') ||
+    host.includes('veyrainvest.az')
+  ) {
+    return PRODUCTION_URL;
+  }
+
+  // 2. Custom host / Vercel preview branch
+  if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+    const proto = (req?.headers?.['x-forwarded-proto'] || 'https').toString();
+    return `${proto}://${host}`.replace(/\/+$/, '');
+  }
+
+  // 3. Explicit APP_URL if provided
+  if (process.env.APP_URL && !process.env.APP_URL.includes('localhost')) {
     return process.env.APP_URL.replace(/\/+$/, '');
   }
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'veyrainvest.vercel.app';
-  const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
-  return `${proto}://${host}`.replace(/\/+$/, '');
+
+  // 4. Localhost development
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    const proto = (req?.headers?.['x-forwarded-proto'] || 'http').toString();
+    return `${proto}://${host}`.replace(/\/+$/, '');
+  }
+
+  // 5. Default fallback to production
+  return PRODUCTION_URL;
 }
 
 export function getGoogleOAuthCredentials() {
-  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '';
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
-  return { clientId: clientId.trim(), clientSecret: clientSecret.trim() };
+  const clientId = (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+  const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
+  return { clientId, clientSecret };
 }
 
 export function setCorsHeaders(res: ServerResponse) {

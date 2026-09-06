@@ -491,13 +491,22 @@ apiRouter.put('/admin/users/:id/balance', requireAdmin, (req: Request, res: Resp
 // 9. GOOGLE OAUTH & USER AUTHENTICATION
 // -------------------------------------------------------------
 
+const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
+
 function getAppUrl(req: Request): string {
-  if (process.env.APP_URL) {
+  const host = ((req.headers['x-forwarded-host'] as string) || req.headers.host || '').toLowerCase();
+  if (
+    process.env.VERCEL_ENV === 'production' ||
+    host.includes('veyrainvest.vercel.app') ||
+    host.includes('veyrainvest.az')
+  ) {
+    return PRODUCTION_URL;
+  }
+  if (process.env.APP_URL && !process.env.APP_URL.includes('localhost')) {
     return process.env.APP_URL.replace(/\/+$/, '');
   }
   const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
-  const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || 'localhost:3000';
-  return `${proto}://${host}`;
+  return `${proto}://${host || 'localhost:3000'}`.replace(/\/+$/, '');
 }
 
 export function generateUserSessionToken(user: any): { token: string; expiresAt: number } {

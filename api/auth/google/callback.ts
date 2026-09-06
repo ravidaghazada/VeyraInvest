@@ -46,8 +46,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     if (state) {
       try {
         const decodedState = JSON.parse(Buffer.from(String(state), 'base64').toString('utf8'));
-        if (decodedState.origin) {
-          callbackUrl = `${decodedState.origin}/api/auth/google/callback`;
+        if (decodedState.redirect_uri) {
+          callbackUrl = decodedState.redirect_uri;
+        } else if (decodedState.origin) {
+          callbackUrl = `${decodedState.origin.replace(/\/+$/, '')}/api/auth/google/callback`;
         }
       } catch {}
     }

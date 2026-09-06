@@ -42,9 +42,23 @@ export interface AuthResponse {
   callbackUrl?: string;
 }
 
+const PRODUCTION_URL = 'https://veyrainvest.vercel.app';
+
+function getActiveOrigin(): string {
+  if (typeof window === 'undefined') return PRODUCTION_URL;
+  const origin = window.location.origin || '';
+  if (origin.includes('veyrainvest.vercel.app') || origin.includes('veyrainvest.az')) {
+    return PRODUCTION_URL;
+  }
+  return origin || PRODUCTION_URL;
+}
+
 export const authService = {
   // Fetch Google OAuth configuration from server
   async getGoogleConfig(): Promise<GoogleAuthConfig> {
+    const origin = getActiveOrigin();
+    const defaultCallback = `${origin}/api/auth/google/callback`;
+
     try {
       const res = await fetch('/api/auth/google/config');
       if (res.ok) {
@@ -54,8 +68,8 @@ export const authService = {
             success: true,
             clientId: data.clientId || '',
             hasClientId: Boolean(data.clientId || data.hasClientId),
-            callbackUrl: data.callbackUrl || `${window.location.origin}/api/auth/google/callback`,
-            appUrl: data.appUrl || window.location.origin,
+            callbackUrl: data.callbackUrl || defaultCallback,
+            appUrl: data.appUrl || origin,
           };
         }
       }
@@ -75,8 +89,8 @@ export const authService = {
         success: true,
         clientId: clientEnvId.trim(),
         hasClientId: true,
-        callbackUrl: `${window.location.origin}/api/auth/google/callback`,
-        appUrl: window.location.origin,
+        callbackUrl: defaultCallback,
+        appUrl: origin,
       };
     }
 
@@ -84,14 +98,14 @@ export const authService = {
       success: false,
       clientId: '',
       hasClientId: false,
-      callbackUrl: `${window.location.origin}/api/auth/google/callback`,
-      appUrl: window.location.origin,
+      callbackUrl: defaultCallback,
+      appUrl: origin,
     };
   },
 
   // Perform Real Google OAuth Login or Registration via standard OAuth 2.0 flow
   async startGoogleAuth(mode: 'login' | 'register' = 'login'): Promise<AuthResponse> {
-    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const currentOrigin = getActiveOrigin();
     let targetAuthUrl = '';
     let fallbackCallbackUrl = `${currentOrigin}/api/auth/google/callback`;
 
